@@ -579,3 +579,10 @@ def test_full_eval_still_reports_the_gate(tmp_path):
 def test_unknown_ticket_is_refused():
     with pytest.raises(ValueError, match="E99"):
         run_eval.run("m", 1, agent=lambda t, b: None, start=lambda: "b", stop=lambda b: None, tickets=["E99"])
+
+
+def test_max_tokens_env_is_read_at_call_time(env, monkeypatch):  # bugs.md F8: .env loads after llm.client is imported
+    monkeypatch.setenv("DRYDOCK_MAX_TOKENS", "1234")
+    seen = []
+    chat([{"role": "user", "content": "hi"}], transport=transport(ok_handler(seen)))
+    assert json.loads(seen[0].content)["max_tokens"] == 1234

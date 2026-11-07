@@ -14,7 +14,7 @@ from typing import Literal
 from fastapi import Depends, FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -123,8 +123,14 @@ async def validation_error(_req, e: RequestValidationError):
     return err(422, "invalid", f"{where}: {msg}" if where else msg)
 
 
+NOT_FOUND_PAGE = ('<!doctype html><meta charset="utf-8"><title>DryDock: not found</title>'
+                  '<h1>No such page</h1><p><a href="/">Back to DryDock</a></p>')
+
+
 @app.exception_handler(StarletteHTTPException)
-async def http_error(_req, e: StarletteHTTPException):
+async def http_error(req, e: StarletteHTTPException):
+    if e.status_code == 404 and not req.url.path.startswith("/api"):  # a person typed a page: give them a way back
+        return HTMLResponse(NOT_FOUND_PAGE, 404)
     message = {404: "Not found", 413: "Request too large"}.get(e.status_code, "Request not allowed")
     return err(e.status_code, "invalid", message)
 
@@ -178,8 +184,9 @@ def tickets():
     return ok(R.inbox())
 
 
-@app.post("/api/runs", dependencies=[Depends(limited)])
+@app.post("/api/runs")
 def create_run(body: CreateRun, request: Request):
+    limited(request)  # after body validation, so a 422 does not use up the visitor's runs (bugs.md F4)
     return ok({"run_id": R.create_run(body.ticket_id, body.text, client_ip(request))}, 201)
 
 
@@ -188,17 +195,17 @@ def get_run(run_id: str):
     return ok(R.view(run_id))
 
 
-@app.post("/api/runs/{run_id}/approve")
+@app.post("/api/runs/{run_id}/approve", dependencies=[Depends(read_limited)])
 def approve(run_id: str, body: Approve):
     return ok(R.approve(run_id, body.role))
 
 
-@app.post("/api/runs/{run_id}/close")
+@app.post("/api/runs/{run_id}/close", dependencies=[Depends(read_limited)])
 def close(run_id: str, body: Close = Close()):
     return ok(R.end(run_id, body.reason))
 
 
-@app.post("/api/runs/{run_id}/undo")
+@app.post("/api/runs/{run_id}/undo", dependencies=[Depends(read_limited)])
 def undo(run_id: str):
     return ok(R.undo(run_id))
 

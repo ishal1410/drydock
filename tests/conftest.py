@@ -17,6 +17,7 @@ def _docker_up() -> bool:
 def _needs_docker(item) -> bool:
     module = item.module.__name__.rsplit(".", 1)[-1]
     return (module in DOCKER_MODULES
+            or "real_box" in item.fixturenames  # test_agent's test_docker_* use a real sandbox (bugs.md F7)
             or (module == "test_sandbox" and ("box" in item.fixturenames or item.originalname in DOCKER_TESTS)))
 
 

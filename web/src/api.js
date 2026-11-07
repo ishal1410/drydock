@@ -69,7 +69,7 @@ export const api = {
     if (!FIXTURE) return finished(id)
     if (!fx[id]) {
       const t = Object.values(FX.runs).find((r) => r.run_id === id)
-      if (!t) throw new ApiError(404, 'invalid', 'Run not found')
+      if (!t) throw new ApiError(404, 'invalid', 'No such run')
       fx[id] = structuredClone(t)
     }
     return fx[id]

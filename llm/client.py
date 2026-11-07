@@ -304,12 +304,14 @@ def _parse(r, body, p, ms, entry, budget) -> Reply:
     return reply
 
 
-def chat(messages, *, model=None, temperature=TEMPERATURE, max_tokens=MAX_TOKENS, tools=None,
+def chat(messages, *, model=None, temperature=TEMPERATURE, max_tokens=None, tools=None,
          response_format=None, transport=None, timeout=None, budget=None) -> Reply:
     """One logical call: paced, retried on 429/5xx inside the run's budget, then tried on the next provider."""
     budget = budget or RunBudget()
     budget.check()
     chain = providers(model)
+    # read per call: orch/app.py loads .env after this module is imported (bugs.md F8)
+    max_tokens = max_tokens or env_int("DRYDOCK_MAX_TOKENS", MAX_TOKENS)
     body = {"messages": messages, "temperature": temperature, "max_tokens": max_tokens}
     if tools:
         body["tools"] = tools

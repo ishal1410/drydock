@@ -163,6 +163,8 @@ def undo(run_id) -> UndoResult:
     """Restore the pre-apply dump, report the restored checksum, then end the task (Undo is an LC1 trigger)."""
     with LOCK:
         run = RUNS.get(run_id) or {}
+        if not run.get("ended") and not run.get("applied_at"):
+            raise RuntimeError("nothing to undo: this run was never applied")
         if not run.get("snapshot") or run.get("ended"):
             raise RuntimeError("nothing to undo: task closed, environment reset to seed")
         box = live()
@@ -171,7 +173,12 @@ def undo(run_id) -> UndoResult:
         same = restored == run["before"]
         LEDGER.append({"run_id": run_id, "step": "undo", "container_id": box.id, "at": now(), "checksum": restored,
                        "matches_before": same})
-        return UndoResult(restored, same, end_task(run_id, "undo"))
+        try:
+            end = end_task(run_id, "undo")
+        except Exception:  # the restore worked and is in the ledger: answer with it, not a 500 (bugs.md F6)
+            log.exception("reset after undo of %s failed", run_id)
+            return UndoResult(restored, False, None)
+        return UndoResult(restored, same, end)
 
 
 def end_task(run_id, reason: str) -> TaskEnd:

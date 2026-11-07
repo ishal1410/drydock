@@ -82,7 +82,7 @@ def test_apply_in_scope_only():
     assert r.ok and not r.rolled_back, r.reason
     measured = diff(before, snapshot_hashes(live))
     assert measured.changed_pks == effect.changed_pks == r.effect.changed_pks
-    assert list(measured.changed_pks) == ["invoices"]
+    assert sorted(measured.changed_pks) == ["accounts", "invoices"]
 
 
 def test_snapshot_undo():
@@ -325,7 +325,7 @@ def test_approve_exception_logs_and_resets(monkeypatch):
         approve("r1", E6, effect=effect)
     rows = A.ledger("r1")
     assert [x["step"] for x in rows] == ["apply", "task_end"]
-    assert not rows[0]["ok"] and "exploded" in rows[0]["reason"]
+    assert not rows[0]["ok"] and rows[0]["reason"] == "apply error: RuntimeError" and "exploded" not in rows[0]["reason"]
     assert docker("inspect", old).returncode != 0 and checksum(A.live()) == A.seed_checksum()
 
 
@@ -369,7 +369,7 @@ def test_checksum_by_table_in_receipt():
     rec = A.receipt("r1")
     b, a = rec["checksum_by_table_before"], rec["checksum_by_table_after"]
     assert set(b) == set(a) == set(S.TABLES)
-    assert [t for t in S.TABLES if b[t] != a[t]] == ["invoices"]
+    assert sorted(t for t in S.TABLES if b[t] != a[t]) == ["accounts", "invoices"]
     assert checksum_by_table(A.live()) == a
 
 

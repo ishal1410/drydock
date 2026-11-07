@@ -69,7 +69,8 @@ function Failure({ error, onBack }) {
   const h = useFocusOnMount()
   const down = error.card === 'model_unavailable'
   // e2e H3: when the model or sandbox host is down, every ticket fails the same way. The samples are the way out.
-  const offline = !FIXTURE && ['model_unavailable', 'sandbox_down', 'error'].includes(error.card)
+  // qa.md ISSUE-001: a used-up daily quota also needs the way out to the samples
+  const offline = !FIXTURE && ['model_unavailable', 'sandbox_down', 'error', 'daily_cap', 'rate_limited'].includes(error.card)
   return (
     <>
       <h1 className="title red-text" tabIndex={-1} ref={h}>{error.message || 'Something went wrong'}</h1>
@@ -159,7 +160,7 @@ function RunView({ id, onBack }) {
   if (error) {
     return (
       <>
-        <h1 className="title red-text">{error.message || 'Run not found'}</h1>
+        <h1 className="title red-text">{error.message || 'No such run'}</h1>
         <div className="row"><button className="btn" onClick={onBack}>Back to inbox</button></div>
       </>
     )
@@ -313,7 +314,8 @@ function Decision({ run, attempts, view, onView, onBack, onOutcome }) {
       setOutcome(next(await fn()))
     } catch (e) {
       setError(e)
-      if (['apply_failed', 'refused'].includes(e.card)) setOutcome({ kind: 'ended' })
+      // nothing_to_undo: the server already ended the task (idle reaper, or another visitor's run): bugs.md F1
+      if (['apply_failed', 'refused', 'nothing_to_undo'].includes(e.card)) setOutcome({ kind: 'ended' })
     } finally {
       setBusy(null)
     }
@@ -347,7 +349,7 @@ function Decision({ run, attempts, view, onView, onBack, onOutcome }) {
       {can
         ? (
           <>
-          {run.approval_class?.reason && <p className="fact why">{who}: {plainReason(run.approval_class.reason)}.</p>}
+          {run.approval_class?.reason && <div className="fact why">{who}:<ul>{run.approval_class.reason.split('; ').filter(Boolean).map((p) => <li key={p}>{plainReason(p)}</li>)}</ul></div>}
           <div className="row">
             <button className="btn" disabled={!!busy} onClick={() => act('approve', () => api.approve(run.run_id, can.role), (r) => ({ kind: 'applied', r }))}>
               {busy === 'approve' ? 'Applying' : can.label}

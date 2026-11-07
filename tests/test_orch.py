@@ -967,3 +967,30 @@ def test_f10_one_visitor_cannot_spend_the_whole_day(client, fake, monkeypatch):
     r = post_run(client, ip="9.9.9.9")
     assert r.status_code == 429 and r.json()["card"] == "rate_limited" and "share" in r.json()["message"]
     assert post_run(client, ip="8.8.8.8").status_code == 201  # another visitor still runs
+
+
+@pytest.mark.parametrize("path,body", [("approve", {"role": "engineer"}), ("close", {}), ("undo", None)])
+def test_run_actions_share_the_per_ip_get_limit(client, fake, monkeypatch, path, body):
+    """S4 (final claims review): /approve, /close and /undo are rate-limited per IP like the GETs."""
+    monkeypatch.setattr(R, "GET_RATE_MAX", 2)
+    h = {"X-Forwarded-For": "8.8.8.8"}
+    url = f"/api/runs/{'0' * 32}/{path}"
+    for _ in range(2):
+        assert client.post(url, json=body, headers=h).status_code != 429
+    r = client.post(url, json=body, headers=h)
+    assert r.status_code == 429 and r.json()["card"] == "rate_limited"
+
+
+def test_invalid_run_bodies_do_not_use_up_the_run_limit(client, fake):  # bugs.md F4
+    h = {"X-Forwarded-For": "9.9.9.9"}
+    for _ in range(R.RATE_MAX + 2):
+        assert client.post("/api/runs", json={"ticket_id": "NOPE"}, headers=h).status_code == 422
+    assert post_run(client, ip="9.9.9.9").status_code == 201
+
+
+def test_unknown_page_is_a_page_not_raw_json(client):  # qa.md: /nope showed raw JSON with no way back
+    r = client.get("/nope")
+    assert r.status_code == 404 and r.headers["content-type"].startswith("text/html")
+    assert 'href="/"' in r.text and "{" not in r.text
+    api = client.get("/api/nope")
+    assert api.status_code == 404 and api.json()["card"] == "invalid"  # the API keeps its JSON card

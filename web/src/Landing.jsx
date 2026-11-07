@@ -35,12 +35,15 @@ const sec = (ms) => `${(ms / 1000).toFixed(2)} sec`
 
 function HeroState({ attempt, className }) {
   const l = primaryLine(attempt)
+  // the hero shows the biggest table; the others are named too, so it never reads as the whole change (live-design P1)
+  const rest = (attempt.lines || []).filter((x) => x.kind === 'row_count' && x !== l && x.measured)
   return (
     <div className={`st ${className} ${attempt.green ? 'green' : 'red'}`}>
       <div className="nums">
         <div><b>{range(l.promised)}</b><span>rows promised</span></div>
-        <div><b className="m">{int(l.measured)}</b><span>rows changed</span></div>
+        <div><b className="m">{int(l.measured)}</b><span>{l.title}</span></div>
       </div>
+      {rest.length > 0 && <p className="fact">{rest.map((x) => `+${int(x.measured)} ${x.title}`).join(' · ')}</p>}
       <p className="v">{HERO_VERDICT[attempt.attempt]}</p>
     </div>
   )
@@ -85,7 +88,7 @@ export default function Landing() {
     <>
       <header className="bar">
         <span className="logo">DryDock</span>
-        <small>Built for Vultr Agent Rush<br />{LIVE ? <>{liveModel && <>Live runs on {liveModel}<br /></>}<a href="?fixture">Or see scripted samples</a></> : 'Sample runs. No live model yet.'}</small>
+        <small>Built for Vultr Agent Rush{LIVE ? <>{liveModel && <> · Live runs on {liveModel}</>} · <a href="?fixture">Or see scripted samples</a></> : ' · Sample runs. No live model yet.'}</small>
       </header>
       <main>
         <div className="wrap">
@@ -135,7 +138,7 @@ export default function Landing() {
         </section>
 
         <section className="sec containment" aria-labelledby="stop-h">
-          <h2 className="big" id="stop-h">The agent’s fix ran away.<br />Stopped. Nothing touched.</h2>
+          <h2 className="big" id="stop-h">A fix that ran away.<br />Stopped. Nothing touched.</h2>
           <StoppedCard
             run={E11}
             attempt={E11_ATTEMPTS[0]}

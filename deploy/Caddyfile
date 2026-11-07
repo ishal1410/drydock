@@ -11,4 +11,9 @@
 	# orchestrator believes it only from this loopback peer. No response timeout is set here: POST /api/runs returns at
 	# once and the browser polls, so no request outlives Caddy's defaults.
 	reverse_proxy 127.0.0.1:8000
+	# Caddy answers an over-limit body before the app, so give it the same JSON card the API documents (bugs.md F3)
+	handle_errors 413 {
+		header Content-Type application/json
+		respond `{"card":"invalid","message":"Request too large"}` 413
+	}
 }

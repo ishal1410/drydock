@@ -74,7 +74,7 @@ def test_scripts_parse_are_marked_untested_and_stay_lf(name):
     head = path.read_text(encoding="utf-8").splitlines()[1]
     # harsh F12: the banner may go once a run is on record; until then a script that never ran must say so
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert head.startswith("# UNTESTED") or f"deploy/{name} ran on" in readme, name
+    assert head.startswith("# UNTESTED") or f"`deploy/{name}` ran on" in readme, name
     assert "eol=lf" in (ROOT / ".gitattributes").read_text(encoding="utf-8")
     if os.name != "nt":  # on Windows `bash` is the WSL stub; there, run `bash -n` by hand from Git Bash
         assert subprocess.run(["bash", "-n", path.as_posix()], capture_output=True, text=True).returncode == 0

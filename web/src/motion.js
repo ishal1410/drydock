@@ -34,7 +34,7 @@ export const EASE = 'expo.out' // closest GSAP curve to the mock's cubic-bezier(
 // Why: the bar races for the run's elapsed_ms and stops dead at the cap, so the containment is seen, not described.
 // In fixtures that value is a sample, not a measurement.
 // Deliberately no ease-out on the stop: a cap does not decelerate.
-export function stopScene(g, el, ms, vars = {}, fmt = (v) => `+${Math.round(v).toLocaleString('en-US')} ms`) {
+export function stopScene(g, el, ms, vars = {}, fmt = (v) => `${(v / 1000).toFixed(2)} sec`) { // one stop-time format, as on the landing (qa.md)
   const num = el.querySelector('.m')
   const o = { v: 0 }
   el.classList.add('counting')

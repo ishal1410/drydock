@@ -18,6 +18,9 @@ ROOT = Path(__file__).resolve().parent.parent
 GOLDEN = json.loads((ROOT / "seed" / "golden.json").read_text(encoding="utf-8"))
 OK = {"c1": True, "c2": True}  # both default checks returned true
 E8_SCOPE = {"table": "invoices", "where": "status = 'open' AND due_on <= DATE '2026-11-01' - 90"}
+# The golden E8 leaves payment-plan invoices out and lowers account balances too (P-5), so its contract names both tables
+E8_SAFE_SCOPE = {"table": "invoices", "where": E8_SCOPE["where"] + " AND NOT EXISTS (SELECT 1 FROM payment_plans p "
+                 "WHERE p.invoice_id = invoices.id AND p.status = 'active')"}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -113,15 +116,17 @@ def test_policy_p7(box):
     eff = measure(box, GOLDEN["E8"]["naive_sql"])
     v = compare(c, eff, pks, OK, policy_results(box))
     assert not v.green and kinds(v) == {"policy"}
-    assert v.failures[0].detail.startswith("P-7")
+    assert any(f.detail.startswith("P-7") for f in v.failures)
 
 
 def test_policy_p7_golden_green(box):
-    n = GOLDEN["E8"]["expected"]["invoices"]["touched"]
-    c = contract(["invoices"], {"invoices": [n, n]}, E8_SCOPE)
-    pks = scope_pks(box, E8_SCOPE)
+    exp = GOLDEN["E8"]["expected"]
+    n, a = exp["invoices"]["touched"], exp["accounts"]["touched"]
+    c = contract(["invoices", "accounts"], {"invoices": [n, n], "accounts": [a, a]}, E8_SAFE_SCOPE)
+    pks = scope_pks(box, E8_SAFE_SCOPE)
+    before = policy_results(box)  # the seed holds one P-5 break on purpose (E2's); only added breaks fail
     eff = measure(box, GOLDEN["E8"]["sql"])
-    v = compare(c, eff, pks, OK, policy_results(box))
+    v = compare(c, eff, pks, OK, policy_results(box), policy_before=before)
     assert v.green and v.failures == []
 
 
@@ -138,9 +143,10 @@ def test_sample_bounded(box):
 
 def test_column_summary(box):
     eff = measure(box, GOLDEN["E8"]["sql"])
-    n = eff.rows_by_table["invoices"]["touched"]
-    assert n == GOLDEN["E8"]["expected"]["invoices"]["touched"]
-    assert eff.column_summary == [f"invoices.status: open→written_off ×{n}"]
+    n, a = eff.rows_by_table["invoices"]["touched"], eff.rows_by_table["accounts"]["touched"]
+    assert (n, a) == (GOLDEN["E8"]["expected"]["invoices"]["touched"], GOLDEN["E8"]["expected"]["accounts"]["touched"])
+    assert eff.column_summary == [f"accounts.balance_cents: 60 distinct changes ×{a}",
+                                  f"invoices.status: open→written_off ×{n}"]
 
 
 def test_money_e6_mrr(box):
@@ -328,7 +334,7 @@ def test_policy_added_violation_reports_both(box):  # fix 8
     eff = measure(box, GOLDEN["E8"]["naive_sql"])
     after = policy_results(box)
     v = compare(contract(["invoices"], {"invoices": [0, n * 2]}, E8_SCOPE), eff, pks, OK, after, policy_before=before)
-    f = next(x for x in v.failures if x.kind == "policy")
+    f = next(x for x in v.failures if x.kind == "policy" and x.detail.startswith("P-7"))
     assert (f.before, f.measured) == (before["P-7"].count, after["P-7"].count) and f.measured > f.before
     assert f.rows == after["P-7"].rows and f.detail.startswith("P-7")
 
@@ -429,7 +435,8 @@ def test_headline_e8(box):  # r2 fix 2
     g = GOLDEN["E8"]
     eff = measure(box, g["sql"])
     h = headlines(eff)
-    assert list(h) == ["invoices.amount_cents"] and h["invoices.amount_cents"].before_cents == g["written_off_cents"]
+    assert sorted(h) == ["accounts.balance_cents", "invoices.amount_cents"]  # one headline per changed table
+    assert h["invoices.amount_cents"].before_cents == g["written_off_cents"]
     assert eff.money_cents_by_column["invoices.paid_cents"].headline is False
 
 
@@ -464,7 +471,7 @@ def test_policy_failure_plain_text(box):  # r2 fix 4
     eff = measure(box, GOLDEN["E8"]["naive_sql"])
     v = compare(contract(["invoices"], {"invoices": [0, n * 2]}, E8_SCOPE), eff, scope_pks(box, E8_SCOPE), OK,
                 policy_results(box), policy_before=before)
-    f = next(x for x in v.failures if x.kind == "policy")
+    f = next(x for x in v.failures if x.kind == "policy" and x.detail.startswith("P-7"))
     assert f.text == "Invoices on an active payment plan are never written off."
 
 

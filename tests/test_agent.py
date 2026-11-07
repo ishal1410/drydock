@@ -863,6 +863,8 @@ def real_template(tmp_path_factory):
 def real_box(real_template, monkeypatch):
     from sandbox.container import destroy, start_run_container
     monkeypatch.setenv("LLM_API_KEY", "sk-test")
+    monkeypatch.setenv("LLM_BASE_URL", "https://example.test/v1")  # dummy host: the transport is faked, nothing is called
+    monkeypatch.setenv("DRYDOCK_MODEL", "fixture-model-1")
     b = start_run_container()
     yield b
     destroy(b)
@@ -881,7 +883,7 @@ def test_docker_lookup_wrapper_returns_numbers(real_box):
 
 def test_docker_real_command_tag(real_box):
     r = runner.run_sql(real_box, GOLDEN["E8"]["sql"], tag=True)
-    assert r.ok and r.command_tag == "UPDATE 87"
+    assert r.ok and r.command_tag == "UPDATE 75"  # the golden's outer statement lowers 75 account balances
     r = runner.run_sql(real_box, "UPDATE invoices SET status = status WHERE id = 1 RETURNING id", tag=True)
     assert r.command_tag == "UPDATE 1"
     r = runner.run_sql(real_box, GOLDEN["H1"]["sql"], tag=True)
@@ -893,7 +895,7 @@ def test_docker_recorded_e8_on_real_sandbox(real_box):
     s = run_eval.score("E8", GOLDEN["E8"], t)
     assert s["passed"] and s["p7_first"] and t.revisions == 1
     assert steps(t, "run")[0].payload["command_tag"] == "UPDATE 90"
-    assert steps(t, "run")[1].payload["command_tag"] == "UPDATE 87"
+    assert steps(t, "run")[1].payload["command_tag"] == "UPDATE 75"  # golden SQL: 87 invoices, then 75 balances
     assert steps(t, "lookup")[0].payload["result"]["count"] == 90
 
 
@@ -903,8 +905,12 @@ def e8_real_checks():
     v1 = [dict(checks[0], sql=checks[0]["sql"].replace("= 87", ">= 87")), checks[1]]
     return Model(text("Write off the overdue open invoices."), tool("lookup", select_sql=LOOK_ALL),
                  contract(85, 95, OVERDUE, v1), sql(NAIVE),
-                 tool("lookup_policy", policy_id="P-7"), tool("lookup", select_sql=LOOK_SAFE),
-                 contract(80, 90, PLAN_SAFE, checks), sql(SAFE), js(E8_REPLY))
+                 # the naive SQL also breaks P-5 (balances not lowered), so the model reads both named rules before the lookup
+                 tool("lookup_policy", policy_id="P-7"), tool("lookup_policy", policy_id="P-5"), tool("lookup", select_sql=LOOK_SAFE),
+                 # v2 is the golden: it also lowers balances (P-5), so the contract names both tables, as live green runs did
+                 js({"tables": ["invoices", "accounts"], "expected_rows": {"invoices": [80, 90], "accounts": [1, 90]},
+                     "scope_rule": {"table": "invoices", "where": PLAN_SAFE}, "checks": checks}),
+                 sql(GOLDEN["E8"]["sql"]), js(E8_REPLY))
 
 
 def test_docker_recorded_e11_really_stops(real_box):

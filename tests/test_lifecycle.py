@@ -174,3 +174,25 @@ def test_run_sql_reports_too_much_output_and_kills_the_session(monkeypatch):
     r = runner.run_sql(SimpleNamespace(id="b", sock_exec="e", sock_admin="a"), "SELECT repeat('x', 100000000)")
     assert not r.ok and r.code == "54000" and r.stdout == ""
     assert runner.KILL_SQL in calls[1]
+
+
+def test_undo_on_a_never_applied_run_says_so():  # bugs.md F5
+    A.RUNS["r"] = {}
+    with pytest.raises(RuntimeError, match="nothing to undo: this run was never applied"):
+        A.undo("r")
+
+
+def test_undo_restores_then_a_failed_reset_still_answers(monkeypatch):  # bugs.md F6
+    applied("r")
+    A.RUNS["r"]["before"] = "c0"
+    box = SimpleNamespace(id="live-1")
+    monkeypatch.setattr(A, "live", lambda: box)
+    monkeypatch.setattr(A, "restore_data", lambda b, dump: None)
+    monkeypatch.setattr(A, "checksum", lambda b: "c0")
+
+    def broken_reset(run_id, reason):
+        raise RuntimeError("reset checksum differs from seed")
+    monkeypatch.setattr(A, "end_task", broken_reset)
+    r = A.undo("r")
+    assert r.task_end is None and r.matches_before is False
+    assert [x["step"] for x in A.LEDGER] == ["undo"]

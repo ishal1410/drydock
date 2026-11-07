@@ -2,6 +2,8 @@
 
 An AI agent for billing and support ops data-fix tickets, such as "write off every open invoice 90+ days overdue". It promises what the change will do, runs its SQL on a throwaway copy of the database, and code measures the result against the promise. A person approves before anything touches the live copy, and can undo it.
 
+Live demo: https://64-176-195-195.sslip.io
+
 Built for the Vultr Agent Rush hackathon, Challenge 2 "Powering the Future of Work". All data is synthetic. [Status](#status) lists what has been tested and what has not run yet.
 
 ## How the agent executes real tasks
@@ -83,15 +85,15 @@ Last updated 2026-11-07. Passing tests below use fakes for Docker and the model 
 
 **Tested here**
 - The non-Docker test suite, `web/src/run.check.mjs` and `vite build` pass.
-- `deploy/deploy.sh ran on` the Vultr VM (2026-11-07, several redeploys), and `deploy/verify.sh ran on` it after each: all 13 checks passed (TLS on the sslip.io name, Docker, tickets, checksums, sandbox self-test, port 8000 closed, metadata rule). Live at https://64-176-195-195.sslip.io.
-- Live runs through the site API on Vultr Serverless Inference (`glm-5.3-flash`), 2026-11-07, one run each unless stated:
+- `deploy/deploy.sh` ran on the Vultr VM (2026-11-07, several redeploys), and `deploy/verify.sh` ran on it after each: all 13 checks passed (TLS on the sslip.io name, Docker, tickets, checksums, sandbox self-test, port 8000 closed, metadata rule). Live at https://64-176-195-195.sslip.io.
+- Live runs through the site API on Vultr Serverless Inference (`glm-5.3-flash`), 2026-11-07, one run each unless stated (E1 and E11 had two runs each):
   - E2: green, class A, 0 revisions; 1 account row, as in the golden.
   - E6: green, class B, 1 revision; 68 subscriptions, the golden's SQL.
-  - E11: class C, stopped by the disk spill cap on the first attempt, nothing applied, as the golden expects.
-  - E1: green, class B (golden: A), 1 revision; 1 refund row for the right charge, but the method is typed in rather than copied from the charge.
+  - E11: class C, stopped by the disk spill cap on the first attempt, nothing applied, as the golden expects. An earlier run (`09ca0561`) also ended class C with nothing applied; there the cap hit on the third attempt, after 2 revisions.
+  - E1: green, class B (golden: A), 1 revision; 1 refund row for the right charge, but the method is typed in rather than copied from the charge. An earlier run, before the lookup fix that stopped id columns being summed, went green as class C.
   - E5: red, class C. The model closed the 2 duplicate accounts but left their subscriptions active; P-6 caught it (violations 0 → 2). The golden also cancels them.
-  - E8, after the revise fixes: 6 runs on the final prompt, 4 green (3 class B as in the golden, 1 class C after 2 revisions), 2 red. Every run kept the payment-plan exclusion (87 invoices, 75 accounts); the red ones failed on account balances. Before the fixes, the one live E8 run ended red.
-- The Docker test suite ran once on the VM, in a throwaway Docker-in-Docker daemon so the live template was untouched: 520 passed, 13 failed, 1 skipped (no node). 2 of the 13 pass with a dummy model host set; the other 11 are tests written before the E8 golden began updating account balances (they expect invoices only, `UPDATE 87`, or P-5 at 0), plus one apply-error message test. They are not fixed yet.
+  - E8, after the revise fixes: 6 runs on the final prompt (one lookup fix landed between the two batches of 3), 4 green (3 class B as in the golden, 1 class C after 2 revisions), 2 red. Every run kept the payment-plan exclusion (87 invoices, 75 accounts); the red ones failed on account balances. Before the fixes, the one live E8 run ended red.
+- The full test suite, Docker tests included, ran on the VM in a throwaway Docker-in-Docker daemon so the live template was untouched (2026-11-07): 541 passed, 0 failed, 1 skipped (no node). Full log: `docs/test-run-vm.txt`. Without Docker, the same suite gives 365 passed, 177 skipped.
 - The built page renders `/`, `?app` and `?fixture` in headless Chromium with no CSP errors.
 
 **Known limits**
@@ -102,13 +104,13 @@ Last updated 2026-11-07. Passing tests below use fakes for Docker and the model 
 
 ## Built with Claude Code
 
-Written with [Claude Code](https://claude.com/claude-code), Anthropic's AI coding tool, during the event (first commit Nov 3, 2026). Most of the code was written by it; a human directed the work and makes the release decisions.
+Written with [Claude Code](https://claude.com/claude-code), Anthropic's AI coding tool, during the event. The public history is squashed into one commit (`7e5d3c3`) plus later snapshot commits; the local build history starts at `5c699b0`, 2026-11-03. Most of the code was written by it; a human directed the work and makes the release decisions.
 
 ## Licences
 
 - This repository: MIT (`LICENSE`).
 - **GSAP 3.12.5**, loaded from cdnjs, not copied here: proprietary, under the [Standard "No Charge" GSAP License](https://gsap.com/licensing/), **not MIT**. Commercial use is covered. The page renders its final state if GSAP is missing.
-- **Cabinet Grotesk**, loaded from Fontshare, not copied here: **licence terms not verified**. Fontshare's pages did not show them to our fetch. Check them before relying on this font.
+- **Cabinet Grotesk**, loaded from Fontshare, not copied here: ITF Free Font License (Indian Type Foundry), free for personal and commercial use.
 - Python dependencies, from their package metadata: FastAPI, Pydantic, pytest, PyYAML: MIT. httpx, Uvicorn, Starlette: BSD-3-Clause.
 - npm, from `package-lock.json`: React, Vite, Tailwind CSS: MIT. Build-time only, not MIT: lightningcss (MPL-2.0), caniuse-lite (CC-BY-4.0), tar, chownr, minipass, yallist (BlueOak-1.0.0).
 - Container images, used as is, licences not re-checked here: Postgres 17, Caddy, Python, Docker CLI.
