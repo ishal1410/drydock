@@ -1,0 +1,14 @@
+# TLS: Caddy gets a certificate for {$DRYDOCK_HOST} (<ip-with-dashes>.sslip.io) by itself over ports 80/443.
+# Everything goes to the orchestrator on loopback, which serves both /api and the built web/dist.
+# Run on the Vultr VM since 2026-11-07 (deploy/verify.sh checks TLS on the sslip.io name).
+{$DRYDOCK_HOST} {
+	request_body {
+		max_size 16KB
+	}
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+	# X-Forwarded-For: Caddy replaces what the client sent with the address it saw (no trusted_proxies set), and the
+	# orchestrator believes it only from this loopback peer. No response timeout is set here: POST /api/runs returns at
+	# once and the browser polls, so no request outlives Caddy's defaults.
+	reverse_proxy 127.0.0.1:8000
+}

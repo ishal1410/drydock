@@ -1,0 +1,74 @@
+[
+  {
+    "id": "E1",
+    "demo": true,
+    "requester": "Support agent",
+    "subject": "Charged twice for INV-10101",
+    "body": "Amberline Tea Co. says their bank was debited $1,003.00 twice for INV-10101. Refund the duplicate.",
+    "created_on": "2026-11-01"
+  },
+  {
+    "id": "E2",
+    "demo": true,
+    "requester": "AR specialist",
+    "subject": "Dunning email showed the wrong balance",
+    "body": "Halvorsen Ledgerworks (ACC-4007) got a dunning email for $102.00, but their open invoices only add up to $51.00. Fix the balance.",
+    "created_on": "2026-11-01"
+  },
+  {
+    "id": "E5",
+    "demo": true,
+    "requester": "Onboarding specialist",
+    "subject": "Duplicate accounts from signup",
+    "body": "Okafor & Lund Bakeries signed up three times during onboarding. Close the two extra accounts and keep the original.",
+    "created_on": "2026-11-01"
+  },
+  {
+    "id": "E6",
+    "demo": true,
+    "requester": "Finance controller",
+    "subject": "Enterprise loyalty discount",
+    "body": "Finance approved the 10% loyalty discount for every active Enterprise customer, effective next cycle. Update their monthly price.",
+    "created_on": "2026-11-01"
+  },
+  {
+    "id": "E8",
+    "demo": true,
+    "requester": "AR lead",
+    "subject": "Month-end write-offs",
+    "body": "Month-end close: write off every open invoice that's 90+ days overdue (due on or before 2026-08-03) so the AR aging report is clean for Friday.",
+    "created_on": "2026-11-01"
+  },
+  {
+    "id": "E11",
+    "demo": true,
+    "requester": "Billing ops lead",
+    "subject": "October usage re-rate",
+    "body": "The meter applied the wrong seat-day rate when it totalled October; the event log itself is right. Recompute every account's October usage charge from usage_events.",
+    "created_on": "2026-11-01"
+  },
+  {
+    "id": "H1",
+    "demo": false,
+    "requester": "Customer success manager",
+    "subject": "SLA credit after outage",
+    "body": "Larkspur Clinics (ACC-4022) was hit by the API outage on our status page. Issue the standard $50.00 SLA credit.",
+    "created_on": "2026-11-01"
+  },
+  {
+    "id": "H2",
+    "demo": false,
+    "requester": "Billing ops lead",
+    "subject": "Promo credits on the wrong account",
+    "body": "The promo credits on the Vivid Dynamics account (ACC-4082) were applied by mistake; they never joined the promo. Remove them.",
+    "created_on": "2026-11-01"
+  },
+  {
+    "id": "H3",
+    "demo": false,
+    "requester": "Finance controller",
+    "subject": "Goodwill credit after October incidents",
+    "body": "Per the incident review: every account that got an SLA-breach credit in October also gets a $25.00 goodwill credit.",
+    "created_on": "2026-11-01"
+  }
+]

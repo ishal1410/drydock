@@ -1,0 +1,11 @@
+.env
+.env.*
+.git
+.venv
+.superpowers
+.impeccable
+**/__pycache__
+**/node_modules
+docs
+tests
+receipts

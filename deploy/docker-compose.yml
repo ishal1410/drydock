@@ -1,0 +1,67 @@
+# DryDock on the Vultr VM, running since 2026-11-07. Started by deploy/deploy.sh.
+#
+# Network: caddy and orch share the host network. Caddy holds 80/443, orch binds 127.0.0.1:8000. So nothing is published
+# through Docker (published ports would bypass ufw), and orch.runs.client_ip sees Caddy as the loopback peer it trusts.
+#
+# TRUST BOUNDARY: orch mounts the Docker socket, and the socket is root on this VM. orch also holds the model key. Any
+# code execution in orch is full control of the VM and that key. No path to it is known (model SQL runs only as
+# `executor` inside --network none containers, argv form, no shell), but this is a boundary we accept, not one we remove:
+# the VM holds nothing else, and the key should be rotated after judging. The sandbox containers never get the socket.
+services:
+  caddy:
+    image: caddy:2.8-alpine@sha256:af32e97399febea808609119bb21544d0265c58a02836576e32a2d082c262c17
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      DRYDOCK_HOST: ${DRYDOCK_HOST:?set by deploy.sh}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      orch:
+        condition: service_healthy
+
+  orch:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    network_mode: host
+    restart: unless-stopped
+    command: [uvicorn, orch.app:app, --host, 127.0.0.1, --port, "8000", --no-proxy-headers, --no-server-header]  # one process, never --workers
+    env_file: ../.env   # the key: mode 600, never in the image or on a command line
+    environment:
+      DRYDOCK_RECEIPTS: /data/receipts
+      DRYDOCK_VM_ID: ${DRYDOCK_VM_ID:-}
+      # Demo token budget, over the key file's values. Usage-billed: 2M/day of glm-5.3-flash is about $0.30-0.70.
+      # 13% per IP is about 10 typical runs (~25K tokens each); the per-IP run caps still apply.
+      DRYDOCK_DAILY_TOKENS: "2000000"
+      DRYDOCK_IP_TOKEN_PCT: "13"
+    group_add:
+      - ${DOCKER_GID:?set by deploy.sh}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - drydock_data:/data
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  # live-db (plan D1a, lifecycle LC1): the runner, not compose, owns this container. sandbox/container.py
+  # recreate_live() starts it from a copy of the seed template with exactly the run-container flags below and destroys
+  # and recreates it at every task end. x-drydock-flags is that flag list; tests/test_apply.py::test_apply_same_caps
+  # fails if it drifts from sandbox/container.py HARDEN. No compose run keys (network_mode, mem_limit, volumes, ...) on
+  # purpose: nothing starts this service through compose, and hand-copied keys could drift from HARDEN untested. No
+  # `ports:`, no password env (socket-only, peer auth).
+  live-db:
+    image: postgres@sha256:3b0cda93be7c8dba2ed484d19393d93845dc3dafb88973e248ba8e6d99d784e1  # postgres:17, pinned: must equal sandbox/container.py IMAGE
+    profiles: ["runner-managed"]   # never started by `docker compose up`; recreate_live() runs it
+    labels: [drydock=live]
+    x-drydock-flags: [--network, none, --memory, 512m, --memory-swap, 512m, --cpus, '1', --pids-limit, '128', --cap-drop, ALL, --security-opt, no-new-privileges, --read-only, --tmpfs, '/var/run/postgresql:rw,nosuid,nodev,noexec,size=1m,uid=999,gid=999,mode=0711', --user, postgres]
+
+volumes:
+  caddy_data:
+  caddy_config:
+  drydock_data:

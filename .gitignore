@@ -1,0 +1,18 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+dist/
+.pytest_cache/
+.superpowers/
+receipts/
+*.log
+*.pem
+*.key
+# internal review notes and stale screenshots: on disk, never in the public tree
+docs/audit-*
+docs/ui-shots/
+.impeccable/

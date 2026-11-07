@@ -1,0 +1,2938 @@
+{
+ "note": "FIXTURE: counts, ids, names and money computed from seed/; model text, timings, tokens, ids are samples",
+ "seed_checksum": "ef18c040f0aad6479fcc9cd287e1c2f69fa12f5044210b42c275cf996e49a135",
+ "tickets": [
+  {
+   "id": "E1",
+   "demo": true,
+   "requester": "Support agent",
+   "subject": "Charged twice for INV-10101",
+   "body": "Amberline Tea Co. says their bank was debited $1,003.00 twice for INV-10101. Refund the duplicate.",
+   "created_on": "2026-11-01"
+  },
+  {
+   "id": "E2",
+   "demo": true,
+   "requester": "AR specialist",
+   "subject": "Dunning email showed the wrong balance",
+   "body": "Halvorsen Ledgerworks (ACC-4007) got a dunning email for $102.00, but their open invoices only add up to $51.00. Fix the balance.",
+   "created_on": "2026-11-01"
+  },
+  {
+   "id": "E5",
+   "demo": true,
+   "requester": "Onboarding specialist",
+   "subject": "Duplicate accounts from signup",
+   "body": "Okafor & Lund Bakeries signed up three times during onboarding. Close the two extra accounts and keep the original.",
+   "created_on": "2026-11-01"
+  },
+  {
+   "id": "E6",
+   "demo": true,
+   "requester": "Finance controller",
+   "subject": "Enterprise loyalty discount",
+   "body": "Finance approved the 10% loyalty discount for every active Enterprise customer, effective next cycle. Update their monthly price.",
+   "created_on": "2026-11-01"
+  },
+  {
+   "id": "E8",
+   "demo": true,
+   "requester": "AR lead",
+   "subject": "Month-end write-offs",
+   "body": "Month-end close: write off every open invoice that's 90+ days overdue (due on or before 2026-08-03) so the AR aging report is clean for Friday.",
+   "created_on": "2026-11-01"
+  },
+  {
+   "id": "E11",
+   "demo": true,
+   "requester": "Billing ops lead",
+   "subject": "October usage re-rate",
+   "body": "The meter applied the wrong seat-day rate when it totalled October; the event log itself is right. Recompute every account's October usage charge from usage_events.",
+   "created_on": "2026-11-01"
+  }
+ ],
+ "runs": {
+  "E11": {
+   "run_id": "fx-e11",
+   "ticket": {
+    "id": "E11",
+    "demo": true,
+    "requester": "Billing ops lead",
+    "subject": "October usage re-rate",
+    "body": "The meter applied the wrong seat-day rate when it totalled October; the event log itself is right. Recompute every account's October usage charge from usage_events.",
+    "created_on": "2026-11-01"
+   },
+   "source_kind": "ticket",
+   "status": "done",
+   "trace": {
+    "steps": [
+     {
+      "n": 1,
+      "name": "read",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:11.000Z",
+      "ms": 880,
+      "tokens": {
+       "in": 1460,
+       "out": 33
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "text": "Recompute every account's October usage charge from usage_events."
+      }
+     },
+     {
+      "n": 2,
+      "name": "lookup",
+      "actor": "sandbox",
+      "service": "sandbox container cc9a48f6ca31",
+      "started_at": "2026-11-05T14:02:11.920Z",
+      "ms": 38,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "sql": "SELECT id FROM accounts",
+       "table": "accounts",
+       "result": {
+        "count": 263,
+        "sums": {}
+       }
+      }
+     },
+     {
+      "n": 3,
+      "name": "contract",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:11.998Z",
+      "ms": 1810,
+      "tokens": {
+       "in": 3120,
+       "out": 286
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "version": 1,
+       "contract": {
+        "tables": [
+         "accounts"
+        ],
+        "expected_rows": {
+         "accounts": [
+          1,
+          263
+         ]
+        },
+        "scope_rule": {
+         "table": "accounts",
+         "where": "true"
+        },
+        "checks": [
+         {
+          "name": "usage_not_negative",
+          "sql": "SELECT count(*) = 0 FROM accounts WHERE usage_cents_oct < 0"
+         },
+         {
+          "name": "usage_matches_events",
+          "sql": "SELECT count(*) = 0 FROM accounts a WHERE usage_cents_oct <> (SELECT coalesce(sum(amount_cents),0) FROM usage_events u WHERE u.account_id = a.id AND u.occurred_at >= DATE '2026-10-01' AND u.occurred_at < DATE '2026-11-01')"
+         }
+        ]
+       },
+       "sha256": "b2b9012f9e1e1150f9fb4e2ceb173b9eee4aaa0e95737544ec2647d87ccb4c30",
+       "locked_at": "2026-11-05T14:02:13.808Z"
+      }
+     },
+     {
+      "n": 4,
+      "name": "sql",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:13.848Z",
+      "ms": 1300,
+      "tokens": {
+       "in": 3900,
+       "out": 120
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "sql": "UPDATE accounts a SET usage_cents_oct = (SELECT coalesce(sum(u.amount_cents), 0) FROM usage_events u WHERE u.account_id = a.id AND u.occurred_at >= DATE '2026-10-01' AND u.occurred_at < DATE '2026-11-01')"
+      }
+     },
+     {
+      "n": 5,
+      "name": "run",
+      "actor": "sandbox",
+      "service": "sandbox container cc9a48f6ca31",
+      "started_at": "2026-11-05T14:02:15.188Z",
+      "ms": 1043,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "command_tag": "ERROR",
+       "elapsed_ms": 1043,
+       "cap_ms": 5000,
+       "ok": false,
+       "stopped_by": "temp_file_limit",
+       "code": "53400",
+       "cap_label": "disk spill cap",
+       "stopped_at": "2026-11-05T14:02:16.231Z",
+       "error": "ERROR:  temporary file size exceeds temp_file_limit (65536kB)"
+      }
+     },
+     {
+      "n": 6,
+      "name": "compare",
+      "actor": "drydock",
+      "service": "orchestrator",
+      "started_at": "2026-11-05T14:02:16.271Z",
+      "ms": 96,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "attempt": 1,
+       "green": false,
+       "lines": [
+        {
+         "kind": "cap",
+         "ok": false,
+         "title": "Statement finished inside the caps",
+         "detail": "stopped by disk spill cap (SQLSTATE 53400) at +1,043 ms"
+        },
+        {
+         "kind": "row_count",
+         "ok": false,
+         "title": "accounts rows changed",
+         "lookup": 263,
+         "promised": [
+          1,
+          263
+         ],
+         "measured": 0
+        }
+       ],
+       "warnings": [],
+       "failures": [
+        {
+         "kind": "cap",
+         "detail": "stopped by disk spill cap"
+        }
+       ],
+       "command_tag": "ERROR"
+      }
+     },
+     {
+      "n": 7,
+      "name": "explain",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:16.407Z",
+      "ms": 1610,
+      "tokens": {
+       "in": 2380,
+       "out": 154
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "text": "Recomputing October usage means summing usage_events.amount_cents (already the rated amount, so no rate is needed) over 588,126,318 synthetic rows. The first attempt was stopped by the disk spill cap, which ends the run. Nothing changed. This re-rate is larger than the per-run cap and needs a batched job outside the per-run sandbox."
+      }
+     }
+    ],
+    "revisions": 0,
+    "contract_sha": "b2b9012f9e1e1150f9fb4e2ceb173b9eee4aaa0e95737544ec2647d87ccb4c30",
+    "contract_locked_at": "2026-11-05T14:02:13.808Z"
+   },
+   "verdict": {
+    "green": false,
+    "failures": [
+     {
+      "kind": "cap",
+      "detail": "stopped by disk spill cap"
+     }
+    ],
+    "warnings": []
+   },
+   "approval_class": {
+    "class": "C",
+    "reason": "red verdict: cap"
+   },
+   "chips": [
+    {
+     "name": "Server-side COPY denied",
+     "ok": true,
+     "detail": "COPY \u2026 TO PROGRAM as executor \u2192 42501"
+    },
+    {
+     "name": "Metadata unreachable, no credentials",
+     "ok": true,
+     "detail": "169.254.169.254 unreachable, no password in env or config"
+    },
+    {
+     "name": "Caps in force",
+     "ok": true,
+     "detail": "--memory 512m, --cpus 1, --pids-limit 128, network none, timeout 5s, temp 64MB"
+    },
+    {
+     "name": "Container destroyed",
+     "ok": true,
+     "detail": "cc9a48f6ca31 at 2026-11-05T14:02:18.177Z"
+    }
+   ],
+   "strip": [
+    {
+     "step": 2,
+     "what": "lookup",
+     "role": "executor",
+     "container_id": "cc9a48f6ca31",
+     "elapsed_ms": 38,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 43201331,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    },
+    {
+     "step": 5,
+     "what": "sql",
+     "role": "executor",
+     "container_id": "cc9a48f6ca31",
+     "elapsed_ms": 1043,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 65011712,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": "temp_file_limit",
+     "code": "53400"
+    }
+   ],
+   "destroyed_at": "2026-11-05T14:02:18.177Z",
+   "stopped": {
+    "cap_label": "disk spill cap",
+    "code": "53400",
+    "started_at": "2026-11-05T14:02:15.188Z",
+    "stopped_at": "2026-11-05T14:02:16.231Z",
+    "elapsed_ms": 1043,
+    "container_id": "cc9a48f6ca31",
+    "rows_label": "usage_events: 588,126,318 synthetic rows",
+    "statement": "sql",
+    "live_checksum_before": "ef18c040f0aad6479fcc9cd287e1c2f69fa12f5044210b42c275cf996e49a135",
+    "live_checksum_after": "ef18c040f0aad6479fcc9cd287e1c2f69fa12f5044210b42c275cf996e49a135",
+    "destroyed_at": "2026-11-05T14:02:18.177Z"
+   },
+   "ledger": [
+    {
+     "service": "Sample VM row",
+     "detail": "orchestrator, run state, receipts volume"
+    },
+    {
+     "service": "Model provider: sample",
+     "detail": "sample-model, 10,860 tokens in / 593 out, 5,600 ms"
+    },
+    {
+     "service": "Sandbox container",
+     "detail": "cc9a48f6ca31, executor role, created 2026-11-05T14:02:11.000Z, destroyed 2026-11-05T14:02:18.177Z"
+    },
+    {
+     "service": "Live-db container",
+     "detail": "untouched until Approve, same flags and role"
+    }
+   ],
+   "explanation": "Recomputing October usage means summing usage_events.amount_cents (already the rated amount, so no rate is needed) over 588,126,318 synthetic rows. The first attempt was stopped by the disk spill cap, which ends the run. Nothing changed. This re-rate is larger than the per-run cap and needs a batched job outside the per-run sandbox.",
+   "reply": "Not done yet. The re-rate has to read the full usage event log, and that is larger than the safety cap on a single run, so DryDock stopped it and changed nothing. It needs a batched job; an engineer will schedule it.",
+   "live_checksum": "ef18c040f0aad6479fcc9cd287e1c2f69fa12f5044210b42c275cf996e49a135",
+   "apply_checksum_after": null
+  },
+  "E8": {
+   "run_id": "fx-e8",
+   "ticket": {
+    "id": "E8",
+    "demo": true,
+    "requester": "AR lead",
+    "subject": "Month-end write-offs",
+    "body": "Month-end close: write off every open invoice that's 90+ days overdue (due on or before 2026-08-03) so the AR aging report is clean for Friday.",
+    "created_on": "2026-11-01"
+   },
+   "source_kind": "ticket",
+   "status": "done",
+   "trace": {
+    "steps": [
+     {
+      "n": 1,
+      "name": "read",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:11.000Z",
+      "ms": 920,
+      "tokens": {
+       "in": 1480,
+       "out": 41
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "text": "Write off open invoices due on or before 2026-08-03 so the AR aging report is clean, and take what was owed off each account's balance."
+      }
+     },
+     {
+      "n": 2,
+      "name": "lookup",
+      "actor": "sandbox",
+      "service": "sandbox container 4e9fd7bdecf5",
+      "started_at": "2026-11-05T14:02:11.960Z",
+      "ms": 38,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "sql": "SELECT amount_cents FROM invoices WHERE status = 'open' AND due_on <= DATE '2026-11-01' - 90",
+       "table": "invoices",
+       "result": {
+        "count": 90,
+        "sums": {
+         "amount_cents": 3352300
+        }
+       }
+      }
+     },
+     {
+      "n": 3,
+      "name": "lookup",
+      "actor": "sandbox",
+      "service": "sandbox container 4e9fd7bdecf5",
+      "started_at": "2026-11-05T14:02:12.038Z",
+      "ms": 38,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "sql": "SELECT DISTINCT account_id FROM invoices WHERE status = 'open' AND due_on <= DATE '2026-11-01' - 90",
+       "table": "invoices",
+       "result": {
+        "count": 78,
+        "sums": {}
+       }
+      }
+     },
+     {
+      "n": 4,
+      "name": "contract",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:12.116Z",
+      "ms": 1810,
+      "tokens": {
+       "in": 3120,
+       "out": 286
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "version": 1,
+       "contract": {
+        "tables": [
+         "invoices",
+         "accounts"
+        ],
+        "expected_rows": {
+         "invoices": [
+          85,
+          95
+         ],
+         "accounts": [
+          70,
+          85
+         ]
+        },
+        "scope_rule": {
+         "table": "invoices",
+         "where": "status = 'open' AND due_on <= DATE '2026-11-01' - 90"
+        },
+        "checks": [
+         {
+          "name": "no_paid_written_off",
+          "sql": "SELECT count(*) = 0 FROM invoices WHERE status = 'written_off' AND paid_cents >= amount_cents AND amount_cents > 0"
+         },
+         {
+          "name": "no_recent_written_off",
+          "sql": "SELECT count(*) = 0 FROM invoices WHERE status = 'written_off' AND due_on > DATE '2026-08-03'"
+         }
+        ]
+       },
+       "sha256": "d67507064cb49580f70556540d31d82a3310ef5bee57cbb11289835a26fba016",
+       "locked_at": "2026-11-05T14:02:13.926Z"
+      }
+     },
+     {
+      "n": 5,
+      "name": "sql",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:13.966Z",
+      "ms": 1240,
+      "tokens": {
+       "in": 3410,
+       "out": 118
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "sql": "WITH w AS (UPDATE invoices SET status = 'written_off' WHERE status = 'open' AND due_on <= DATE '2026-11-01' - 90 RETURNING account_id, amount_cents - paid_cents AS owed) UPDATE accounts a SET balance_cents = a.balance_cents - s.owed FROM (SELECT account_id, sum(owed) AS owed FROM w GROUP BY account_id) s WHERE a.id = s.account_id"
+      }
+     },
+     {
+      "n": 6,
+      "name": "run",
+      "actor": "sandbox",
+      "service": "sandbox container 4e9fd7bdecf5",
+      "started_at": "2026-11-05T14:02:15.246Z",
+      "ms": 61,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "command_tag": "UPDATE 78",
+       "elapsed_ms": 61,
+       "cap_ms": 5000,
+       "ok": true
+      }
+     },
+     {
+      "n": 7,
+      "name": "compare",
+      "actor": "drydock",
+      "service": "orchestrator",
+      "started_at": "2026-11-05T14:02:15.347Z",
+      "ms": 212,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "attempt": 1,
+       "green": false,
+       "lines": [
+        {
+         "kind": "row_count",
+         "ok": true,
+         "title": "invoices rows changed",
+         "lookup": 90,
+         "promised": [
+          85,
+          95
+         ],
+         "measured": 90
+        },
+        {
+         "kind": "row_count",
+         "ok": true,
+         "title": "accounts rows changed",
+         "lookup": 78,
+         "promised": [
+          70,
+          85
+         ],
+         "measured": 78
+        },
+        {
+         "kind": "tables",
+         "ok": true,
+         "title": "Only declared tables changed",
+         "detail": "invoices, accounts"
+        },
+        {
+         "kind": "scope",
+         "ok": true,
+         "title": "Every change inside scope_rule",
+         "detail": "90 of 90 changed rows match"
+        },
+        {
+         "kind": "check",
+         "ok": true,
+         "title": "no_paid_written_off",
+         "sql": "SELECT count(*) = 0 FROM invoices WHERE status = 'written_off' AND paid_cents >= amount_cents AND amount_cents > 0"
+        },
+        {
+         "kind": "check",
+         "ok": true,
+         "title": "no_recent_written_off",
+         "sql": "SELECT count(*) = 0 FROM invoices WHERE status = 'written_off' AND due_on > DATE '2026-08-03'"
+        },
+        {
+         "kind": "policy",
+         "ok": false,
+         "title": "P-7",
+         "detail": "Invoices on an active payment plan are never written off.",
+         "before": 0,
+         "after": 3
+        },
+        {
+         "kind": "policy",
+         "ok": true,
+         "title": "P-5",
+         "detail": "An account's balance equals what is still owed on its open invoices.",
+         "before": 1,
+         "after": 1
+        },
+        {
+         "kind": "policy",
+         "ok": true,
+         "title": "P-1",
+         "detail": "An account with open invoices is never closed.",
+         "before": 0,
+         "after": 0
+        },
+        {
+         "kind": "policy",
+         "ok": true,
+         "title": "P-3",
+         "detail": "An invoice's paid amount never exceeds its amount.",
+         "before": 0,
+         "after": 0
+        }
+       ],
+       "warnings": [],
+       "failures": [
+        {
+         "kind": "policy",
+         "detail": "P-7: violations 0 \u2192 3",
+         "before": 0,
+         "measured": 3,
+         "rows": [
+          {
+           "customer": "Cedarfall Clinics",
+           "invoice": "INV-10022",
+           "owed_cents": 6668,
+           "arr_cents": 240000
+          },
+          {
+           "customer": "Lumenhaus Studio",
+           "invoice": "INV-10076",
+           "owed_cents": 49950,
+           "arr_cents": 1198800
+          },
+          {
+           "customer": "Quietwater Robotics",
+           "invoice": "INV-10114",
+           "owed_cents": 60300,
+           "arr_cents": 1206000
+          }
+         ],
+         "text": "Invoices on an active payment plan are never written off."
+        }
+       ],
+       "command_tag": "UPDATE 78"
+      }
+     },
+     {
+      "n": 8,
+      "name": "revise",
+      "actor": "drydock",
+      "service": "orchestrator",
+      "started_at": "2026-11-05T14:02:15.599Z",
+      "ms": 4,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "fed_back": [
+        "P-7: violations 0 \u2192 3"
+       ]
+      }
+     },
+     {
+      "n": 9,
+      "name": "lookup_policy",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:15.643Z",
+      "ms": 610,
+      "tokens": {
+       "in": 3790,
+       "out": 22
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "policy_id": "P-7",
+       "text": "Invoices on an active payment plan are never written off."
+      }
+     },
+     {
+      "n": 10,
+      "name": "lookup",
+      "actor": "sandbox",
+      "service": "sandbox container 4e9fd7bdecf5",
+      "started_at": "2026-11-05T14:02:16.293Z",
+      "ms": 38,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "sql": "SELECT amount_cents FROM invoices WHERE status = 'open' AND due_on <= DATE '2026-11-01' - 90 AND NOT EXISTS (SELECT 1 FROM payment_plans p WHERE p.invoice_id = invoices.id AND p.status = 'active')",
+       "table": "invoices",
+       "result": {
+        "count": 87,
+        "sums": {
+         "amount_cents": 3131900
+        }
+       }
+      }
+     },
+     {
+      "n": 11,
+      "name": "lookup",
+      "actor": "sandbox",
+      "service": "sandbox container 4e9fd7bdecf5",
+      "started_at": "2026-11-05T14:02:16.371Z",
+      "ms": 38,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "sql": "SELECT DISTINCT account_id FROM invoices WHERE status = 'open' AND due_on <= DATE '2026-11-01' - 90 AND NOT EXISTS (SELECT 1 FROM payment_plans p WHERE p.invoice_id = invoices.id AND p.status = 'active')",
+       "table": "invoices",
+       "result": {
+        "count": 75,
+        "sums": {}
+       }
+      }
+     },
+     {
+      "n": 12,
+      "name": "contract",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:16.449Z",
+      "ms": 1690,
+      "tokens": {
+       "in": 4210,
+       "out": 301
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "version": 2,
+       "contract": {
+        "tables": [
+         "invoices",
+         "accounts"
+        ],
+        "expected_rows": {
+         "invoices": [
+          80,
+          90
+         ],
+         "accounts": [
+          70,
+          80
+         ]
+        },
+        "scope_rule": {
+         "table": "invoices",
+         "where": "status = 'open' AND due_on <= DATE '2026-11-01' - 90 AND NOT EXISTS (SELECT 1 FROM payment_plans p WHERE p.invoice_id = invoices.id AND p.status = 'active')"
+        },
+        "checks": [
+         {
+          "name": "no_paid_written_off",
+          "sql": "SELECT count(*) = 0 FROM invoices WHERE status = 'written_off' AND paid_cents >= amount_cents AND amount_cents > 0"
+         },
+         {
+          "name": "no_recent_written_off",
+          "sql": "SELECT count(*) = 0 FROM invoices WHERE status = 'written_off' AND due_on > DATE '2026-08-03'"
+         }
+        ]
+       },
+       "sha256": "d99debf5684238e43e4c36cabc974585d88ef8acad13093101208d4752de3d45",
+       "locked_at": "2026-11-05T14:02:18.139Z",
+       "diff": [
+        "- expected_rows.invoices: [85, 95]",
+        "+ expected_rows.invoices: [80, 90]",
+        "- expected_rows.accounts: [70, 85]",
+        "+ expected_rows.accounts: [70, 80]",
+        "- scope_rule.where: status = 'open' AND due_on <= DATE '2026-11-01' - 90",
+        "+ scope_rule.where: status = 'open' AND due_on <= DATE '2026-11-01' - 90 AND NOT EXISTS (SELECT 1 FROM payment_plans p WHERE p.invoice_id = invoices.id AND p.status = 'active')"
+       ]
+      }
+     },
+     {
+      "n": 13,
+      "name": "sql",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:18.179Z",
+      "ms": 1180,
+      "tokens": {
+       "in": 4380,
+       "out": 136
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "sql": "WITH w AS (UPDATE invoices SET status = 'written_off' WHERE status = 'open' AND due_on <= DATE '2026-11-01' - 90 AND NOT EXISTS (SELECT 1 FROM payment_plans p WHERE p.invoice_id = invoices.id AND p.status = 'active') RETURNING account_id, amount_cents - paid_cents AS owed) UPDATE accounts a SET balance_cents = a.balance_cents - s.owed FROM (SELECT account_id, sum(owed) AS owed FROM w GROUP BY account_id) s WHERE a.id = s.account_id"
+      }
+     },
+     {
+      "n": 14,
+      "name": "run",
+      "actor": "sandbox",
+      "service": "sandbox container 4e9fd7bdecf5",
+      "started_at": "2026-11-05T14:02:19.399Z",
+      "ms": 66,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "command_tag": "UPDATE 75",
+       "elapsed_ms": 66,
+       "cap_ms": 5000,
+       "ok": true
+      }
+     },
+     {
+      "n": 15,
+      "name": "compare",
+      "actor": "drydock",
+      "service": "orchestrator",
+      "started_at": "2026-11-05T14:02:19.505Z",
+      "ms": 204,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "attempt": 2,
+       "green": true,
+       "lines": [
+        {
+         "kind": "row_count",
+         "ok": true,
+         "title": "invoices rows changed",
+         "lookup": 87,
+         "promised": [
+          80,
+          90
+         ],
+         "measured": 87
+        },
+        {
+         "kind": "row_count",
+         "ok": true,
+         "title": "accounts rows changed",
+         "lookup": 75,
+         "promised": [
+          70,
+          80
+         ],
+         "measured": 75
+        },
+        {
+         "kind": "tables",
+         "ok": true,
+         "title": "Only declared tables changed",
+         "detail": "invoices, accounts"
+        },
+        {
+         "kind": "scope",
+         "ok": true,
+         "title": "Every change inside scope_rule",
+         "detail": "87 of 87 changed rows match"
+        },
+        {
+         "kind": "check",
+         "ok": true,
+         "title": "no_paid_written_off",
+         "sql": "SELECT count(*) = 0 FROM invoices WHERE status = 'written_off' AND paid_cents >= amount_cents AND amount_cents > 0"
+        },
+        {
+         "kind": "check",
+         "ok": true,
+         "title": "no_recent_written_off",
+         "sql": "SELECT count(*) = 0 FROM invoices WHERE status = 'written_off' AND due_on > DATE '2026-08-03'"
+        },
+        {
+         "kind": "policy",
+         "ok": true,
+         "title": "P-7",
+         "detail": "Invoices on an active payment plan are never written off.",
+         "before": 0,
+         "after": 0
+        },
+        {
+         "kind": "policy",
+         "ok": true,
+         "title": "P-5",
+         "detail": "An account's balance equals what is still owed on its open invoices.",
+         "before": 1,
+         "after": 1
+        },
+        {
+         "kind": "policy",
+         "ok": true,
+         "title": "P-1",
+         "detail": "An account with open invoices is never closed.",
+         "before": 0,
+         "after": 0
+        },
+        {
+         "kind": "policy",
+         "ok": true,
+         "title": "P-3",
+         "detail": "An invoice's paid amount never exceeds its amount.",
+         "before": 0,
+         "after": 0
+        }
+       ],
+       "warnings": [],
+       "failures": [],
+       "effect": {
+        "rows_by_table": {
+         "invoices": {
+          "count_delta": 0,
+          "touched": 87
+         },
+         "accounts": {
+          "count_delta": 0,
+          "touched": 75
+         }
+        },
+        "sample": {
+         "invoices": [
+          {
+           "pk": 218,
+           "op": "update",
+           "label": "INV-10218",
+           "before": {
+            "id": 218,
+            "number": "INV-10218",
+            "account_id": 189,
+            "subscription_id": 189,
+            "amount_cents": 20300,
+            "paid_cents": 0,
+            "issued_on": "2026-05-16",
+            "due_on": "2026-06-15",
+            "status": "open"
+           },
+           "after": {
+            "id": 218,
+            "number": "INV-10218",
+            "account_id": 189,
+            "subscription_id": 189,
+            "amount_cents": 20300,
+            "paid_cents": 0,
+            "issued_on": "2026-05-16",
+            "due_on": "2026-06-15",
+            "status": "written_off"
+           },
+           "changed": [
+            "status"
+           ]
+          },
+          {
+           "pk": 284,
+           "op": "update",
+           "label": "INV-10284",
+           "before": {
+            "id": 284,
+            "number": "INV-10284",
+            "account_id": 171,
+            "subscription_id": 171,
+            "amount_cents": 20500,
+            "paid_cents": 0,
+            "issued_on": "2026-05-08",
+            "due_on": "2026-06-07",
+            "status": "open"
+           },
+           "after": {
+            "id": 284,
+            "number": "INV-10284",
+            "account_id": 171,
+            "subscription_id": 171,
+            "amount_cents": 20500,
+            "paid_cents": 0,
+            "issued_on": "2026-05-08",
+            "due_on": "2026-06-07",
+            "status": "written_off"
+           },
+           "changed": [
+            "status"
+           ]
+          },
+          {
+           "pk": 306,
+           "op": "update",
+           "label": "INV-10306",
+           "before": {
+            "id": 306,
+            "number": "INV-10306",
+            "account_id": 132,
+            "subscription_id": 132,
+            "amount_cents": 20800,
+            "paid_cents": 0,
+            "issued_on": "2025-11-05",
+            "due_on": "2025-12-05",
+            "status": "open"
+           },
+           "after": {
+            "id": 306,
+            "number": "INV-10306",
+            "account_id": 132,
+            "subscription_id": 132,
+            "amount_cents": 20800,
+            "paid_cents": 0,
+            "issued_on": "2025-11-05",
+            "due_on": "2025-12-05",
+            "status": "written_off"
+           },
+           "changed": [
+            "status"
+           ]
+          },
+          {
+           "pk": 342,
+           "op": "update",
+           "label": "INV-10342",
+           "before": {
+            "id": 342,
+            "number": "INV-10342",
+            "account_id": 194,
+            "subscription_id": 194,
+            "amount_cents": 5400,
+            "paid_cents": 0,
+            "issued_on": "2025-12-06",
+            "due_on": "2026-01-05",
+            "status": "open"
+           },
+           "after": {
+            "id": 342,
+            "number": "INV-10342",
+            "account_id": 194,
+            "subscription_id": 194,
+            "amount_cents": 5400,
+            "paid_cents": 0,
+            "issued_on": "2025-12-06",
+            "due_on": "2026-01-05",
+            "status": "written_off"
+           },
+           "changed": [
+            "status"
+           ]
+          },
+          {
+           "pk": 436,
+           "op": "update",
+           "label": "INV-10436",
+           "before": {
+            "id": 436,
+            "number": "INV-10436",
+            "account_id": 79,
+            "subscription_id": 79,
+            "amount_cents": 20300,
+            "paid_cents": 0,
+            "issued_on": "2026-06-17",
+            "due_on": "2026-07-17",
+            "status": "open"
+           },
+           "after": {
+            "id": 436,
+            "number": "INV-10436",
+            "account_id": 79,
+            "subscription_id": 79,
+            "amount_cents": 20300,
+            "paid_cents": 0,
+            "issued_on": "2026-06-17",
+            "due_on": "2026-07-17",
+            "status": "written_off"
+           },
+           "changed": [
+            "status"
+           ]
+          }
+         ],
+         "accounts": [
+          {
+           "pk": 2,
+           "op": "update",
+           "label": "ACC-4002",
+           "before": {
+            "id": 2,
+            "customer_id": 2,
+            "code": "ACC-4002",
+            "status": "active",
+            "balance_cents": 100800,
+            "opened_on": "2023-06-13",
+            "usage_cents_oct": 36175
+           },
+           "after": {
+            "id": 2,
+            "customer_id": 2,
+            "code": "ACC-4002",
+            "status": "active",
+            "balance_cents": 0,
+            "opened_on": "2023-06-13",
+            "usage_cents_oct": 36175
+           },
+           "changed": [
+            "balance_cents"
+           ]
+          },
+          {
+           "pk": 7,
+           "op": "update",
+           "label": "ACC-4007",
+           "before": {
+            "id": 7,
+            "customer_id": 7,
+            "code": "ACC-4007",
+            "status": "active",
+            "balance_cents": 10200,
+            "opened_on": "2024-07-07",
+            "usage_cents_oct": 11601
+           },
+           "after": {
+            "id": 7,
+            "customer_id": 7,
+            "code": "ACC-4007",
+            "status": "active",
+            "balance_cents": 5100,
+            "opened_on": "2024-07-07",
+            "usage_cents_oct": 11601
+           },
+           "changed": [
+            "balance_cents"
+           ]
+          },
+          {
+           "pk": 13,
+           "op": "update",
+           "label": "ACC-4013",
+           "before": {
+            "id": 13,
+            "customer_id": 13,
+            "code": "ACC-4013",
+            "status": "active",
+            "balance_cents": 20200,
+            "opened_on": "2024-12-18",
+            "usage_cents_oct": 14623
+           },
+           "after": {
+            "id": 13,
+            "customer_id": 13,
+            "code": "ACC-4013",
+            "status": "active",
+            "balance_cents": 0,
+            "opened_on": "2024-12-18",
+            "usage_cents_oct": 14623
+           },
+           "changed": [
+            "balance_cents"
+           ]
+          },
+          {
+           "pk": 18,
+           "op": "update",
+           "label": "ACC-4018",
+           "before": {
+            "id": 18,
+            "customer_id": 18,
+            "code": "ACC-4018",
+            "status": "active",
+            "balance_cents": 25000,
+            "opened_on": "2024-12-23",
+            "usage_cents_oct": 27149
+           },
+           "after": {
+            "id": 18,
+            "customer_id": 18,
+            "code": "ACC-4018",
+            "status": "active",
+            "balance_cents": 15000,
+            "opened_on": "2024-12-23",
+            "usage_cents_oct": 27149
+           },
+           "changed": [
+            "balance_cents"
+           ]
+          },
+          {
+           "pk": 19,
+           "op": "update",
+           "label": "ACC-4019",
+           "before": {
+            "id": 19,
+            "customer_id": 19,
+            "code": "ACC-4019",
+            "status": "active",
+            "balance_cents": 503500,
+            "opened_on": "2024-06-13",
+            "usage_cents_oct": 6286
+           },
+           "after": {
+            "id": 19,
+            "customer_id": 19,
+            "code": "ACC-4019",
+            "status": "active",
+            "balance_cents": 402800,
+            "opened_on": "2024-06-13",
+            "usage_cents_oct": 6286
+           },
+           "changed": [
+            "balance_cents"
+           ]
+          }
+         ]
+        },
+        "column_summary": [
+         "invoices.status: open\u2192written_off \u00d787",
+         "accounts.balance_cents: 60 distinct changes \u00d775"
+        ],
+        "money": [
+         {
+          "key": "invoices.amount_cents",
+          "before_cents": 3131900,
+          "after_cents": 3131900,
+          "delta_cents": 0,
+          "column_changed": false,
+          "rows": 87,
+          "scope_label": "value of the 87 changed rows",
+          "null_rows": 0,
+          "direction": null,
+          "headline": true
+         },
+         {
+          "key": "accounts.balance_cents",
+          "before_cents": 6067500,
+          "after_cents": 2935600,
+          "delta_cents": -3131900,
+          "column_changed": true,
+          "rows": 75,
+          "scope_label": "across the 75 changed rows",
+          "null_rows": 0,
+          "direction": null,
+          "headline": true
+         }
+        ]
+       },
+       "command_tag": "UPDATE 75"
+      }
+     },
+     {
+      "n": 16,
+      "name": "explain",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:19.749Z",
+      "ms": 1530,
+      "tokens": {
+       "in": 2120,
+       "out": 168
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "text": "87 open invoices due on or before 2026-08-03 were marked written_off, worth $31,319.00, and the same amount came off 75 account balances. The first attempt also wrote off 3 invoices on active payment plans (Cedarfall Clinics, Lumenhaus Studio, Quietwater Robotics); policy P-7 failed, so the revision leaves them open."
+      }
+     }
+    ],
+    "revisions": 1,
+    "contract_sha": "d67507064cb49580f70556540d31d82a3310ef5bee57cbb11289835a26fba016",
+    "contract_locked_at": "2026-11-05T14:02:13.926Z"
+   },
+   "verdict": {
+    "green": true,
+    "failures": [],
+    "warnings": []
+   },
+   "approval_class": {
+    "class": "B",
+    "reason": "2 tables changed; 162 rows > 50; $31,319.00 moved, over the ops limit of $2,500.00; a policy failed in an earlier attempt; 1 revision used"
+   },
+   "chips": [
+    {
+     "name": "Server-side COPY denied",
+     "ok": true,
+     "detail": "COPY \u2026 TO PROGRAM as executor \u2192 42501"
+    },
+    {
+     "name": "Metadata unreachable, no credentials",
+     "ok": true,
+     "detail": "169.254.169.254 unreachable, no password in env or config"
+    },
+    {
+     "name": "Caps in force",
+     "ok": true,
+     "detail": "--memory 512m, --cpus 1, --pids-limit 128, network none, timeout 5s, temp 64MB"
+    },
+    {
+     "name": "Container destroyed",
+     "ok": true,
+     "detail": "4e9fd7bdecf5 at 2026-11-05T14:02:21.439Z"
+    }
+   ],
+   "strip": [
+    {
+     "step": 2,
+     "what": "lookup",
+     "role": "executor",
+     "container_id": "4e9fd7bdecf5",
+     "elapsed_ms": 38,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 43201331,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    },
+    {
+     "step": 3,
+     "what": "lookup",
+     "role": "executor",
+     "container_id": "4e9fd7bdecf5",
+     "elapsed_ms": 38,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 43201331,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    },
+    {
+     "step": 6,
+     "what": "sql",
+     "role": "executor",
+     "container_id": "4e9fd7bdecf5",
+     "elapsed_ms": 61,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 48339353,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    },
+    {
+     "step": 10,
+     "what": "lookup",
+     "role": "executor",
+     "container_id": "4e9fd7bdecf5",
+     "elapsed_ms": 38,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 43201331,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    },
+    {
+     "step": 11,
+     "what": "lookup",
+     "role": "executor",
+     "container_id": "4e9fd7bdecf5",
+     "elapsed_ms": 38,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 43201331,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    },
+    {
+     "step": 14,
+     "what": "sql",
+     "role": "executor",
+     "container_id": "4e9fd7bdecf5",
+     "elapsed_ms": 66,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 48653926,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    }
+   ],
+   "destroyed_at": "2026-11-05T14:02:21.439Z",
+   "stopped": null,
+   "ledger": [
+    {
+     "service": "Sample VM row",
+     "detail": "orchestrator, run state, receipts volume"
+    },
+    {
+     "service": "Model provider: sample",
+     "detail": "sample-model, 22,510 tokens in / 1,072 out, 8,980 ms"
+    },
+    {
+     "service": "Sandbox container",
+     "detail": "4e9fd7bdecf5, executor role, created 2026-11-05T14:02:11.000Z, destroyed 2026-11-05T14:02:21.439Z"
+    },
+    {
+     "service": "Live-db container",
+     "detail": "untouched until Approve, same flags and role"
+    }
+   ],
+   "explanation": "87 open invoices due on or before 2026-08-03 were marked written_off, worth $31,319.00, and the same amount came off 75 account balances. The first attempt also wrote off 3 invoices on active payment plans (Cedarfall Clinics, Lumenhaus Studio, Quietwater Robotics); policy P-7 failed, so the revision leaves them open.",
+   "reply": "Done on a sandbox copy, waiting for engineer approval: 87 invoices 90+ days overdue written off ($31,319.00, the aging backlog), balances updated. 3 invoices on active payment plans were left alone per policy P-7 ($1,169.18 still owed).",
+   "live_checksum": "ef18c040f0aad6479fcc9cd287e1c2f69fa12f5044210b42c275cf996e49a135",
+   "apply_checksum_after": "0d4c619389e1f8e5152e636f474bb44d83e4f473468385a67d871d231e663824"
+  },
+  "E1": {
+   "run_id": "fx-e1",
+   "ticket": {
+    "id": "E1",
+    "demo": true,
+    "requester": "Support agent",
+    "subject": "Charged twice for INV-10101",
+    "body": "Amberline Tea Co. says their bank was debited $1,003.00 twice for INV-10101. Refund the duplicate.",
+    "created_on": "2026-11-01"
+   },
+   "source_kind": "ticket",
+   "status": "done",
+   "trace": {
+    "steps": [
+     {
+      "n": 1,
+      "name": "read",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:11.000Z",
+      "ms": 900,
+      "tokens": {
+       "in": 1450,
+       "out": 38
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "text": "Refund the duplicate $1,003.00 charge on INV-10101."
+      }
+     },
+     {
+      "n": 2,
+      "name": "lookup",
+      "actor": "sandbox",
+      "service": "sandbox container cddb3396dca9",
+      "started_at": "2026-11-05T14:02:11.940Z",
+      "ms": 38,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "sql": "SELECT amount_cents FROM payments WHERE invoice_id = 101 AND kind = 'charge'",
+       "table": "payments",
+       "result": {
+        "count": 2,
+        "sums": {
+         "amount_cents": 200600
+        }
+       }
+      }
+     },
+     {
+      "n": 3,
+      "name": "contract",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:12.018Z",
+      "ms": 1810,
+      "tokens": {
+       "in": 3120,
+       "out": 286
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "version": 1,
+       "contract": {
+        "tables": [
+         "payments"
+        ],
+        "expected_rows": {
+         "payments": [
+          1,
+          1
+         ]
+        },
+        "scope_rule": {
+         "table": "payments",
+         "where": "id = 2565"
+        },
+        "checks": [
+         {
+          "name": "one_refund_for_charge",
+          "sql": "SELECT count(*) = 1 FROM payments WHERE kind = 'refund' AND refund_of = 2565"
+         },
+         {
+          "name": "refund_equals_charge",
+          "sql": "SELECT bool_and(amount_cents = 100300) FROM payments WHERE refund_of = 2565"
+         }
+        ]
+       },
+       "sha256": "e86cefce12b1c39866c65b415d6627d8399aea7ee875bf5e9876d0a44ab50cb8",
+       "locked_at": "2026-11-05T14:02:13.828Z"
+      }
+     },
+     {
+      "n": 4,
+      "name": "sql",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:13.868Z",
+      "ms": 1150,
+      "tokens": {
+       "in": 3300,
+       "out": 70
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "sql": "INSERT INTO payments (invoice_id, amount_cents, paid_on, method, kind, refund_of) SELECT invoice_id, amount_cents, DATE '2026-11-01', method, 'refund', id FROM payments WHERE id = 2565"
+      }
+     },
+     {
+      "n": 5,
+      "name": "run",
+      "actor": "sandbox",
+      "service": "sandbox container cddb3396dca9",
+      "started_at": "2026-11-05T14:02:15.058Z",
+      "ms": 54,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "command_tag": "INSERT 0 1",
+       "elapsed_ms": 54,
+       "cap_ms": 5000,
+       "ok": true
+      }
+     },
+     {
+      "n": 6,
+      "name": "compare",
+      "actor": "drydock",
+      "service": "orchestrator",
+      "started_at": "2026-11-05T14:02:15.152Z",
+      "ms": 180,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "attempt": 1,
+       "green": true,
+       "lines": [
+        {
+         "kind": "row_count",
+         "ok": true,
+         "title": "payments rows changed",
+         "lookup": 2,
+         "promised": [
+          1,
+          1
+         ],
+         "measured": 1
+        },
+        {
+         "kind": "tables",
+         "ok": true,
+         "title": "Only declared tables changed",
+         "detail": "payments"
+        },
+        {
+         "kind": "scope",
+         "ok": true,
+         "title": "Every change inside scope_rule",
+         "detail": "inserted rows are not scope-checked"
+        },
+        {
+         "kind": "check",
+         "ok": true,
+         "title": "one_refund_for_charge",
+         "sql": "SELECT count(*) = 1 FROM payments WHERE kind = 'refund' AND refund_of = 2565"
+        },
+        {
+         "kind": "check",
+         "ok": true,
+         "title": "refund_equals_charge",
+         "sql": "SELECT bool_and(amount_cents = 100300) FROM payments WHERE refund_of = 2565"
+        },
+        {
+         "kind": "policy",
+         "ok": true,
+         "title": "P-2",
+         "detail": "A charge is never refunded twice.",
+         "before": 0,
+         "after": 0
+        },
+        {
+         "kind": "policy",
+         "ok": true,
+         "title": "P-4",
+         "detail": "A paid invoice keeps net charges at or above its amount.",
+         "before": 0,
+         "after": 0
+        }
+       ],
+       "warnings": [],
+       "failures": [],
+       "effect": {
+        "rows_by_table": {
+         "payments": {
+          "count_delta": 1,
+          "touched": 1
+         }
+        },
+        "sample": {
+         "payments": [
+          {
+           "pk": 2572,
+           "op": "insert",
+           "label": "refund",
+           "before": null,
+           "after": {
+            "id": 2572,
+            "invoice_id": 101,
+            "amount_cents": 100300,
+            "paid_on": "2026-11-01",
+            "method": "ach",
+            "kind": "refund",
+            "refund_of": 2565
+           },
+           "changed": [
+            "id",
+            "invoice_id",
+            "amount_cents",
+            "paid_on",
+            "method",
+            "kind",
+            "refund_of"
+           ]
+          }
+         ]
+        },
+        "column_summary": [
+         "payments: +1 inserted (refund) \u00b7 amount_cents $1,003.00"
+        ],
+        "money": [
+         {
+          "key": "payments.amount_cents",
+          "before_cents": 0,
+          "after_cents": 100300,
+          "delta_cents": 100300,
+          "column_changed": true,
+          "rows": 1,
+          "scope_label": "across the 1 changed row",
+          "null_rows": 0,
+          "direction": "out",
+          "headline": true
+         }
+        ]
+       },
+       "command_tag": "INSERT 0 1"
+      }
+     },
+     {
+      "n": 7,
+      "name": "explain",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:15.372Z",
+      "ms": 1400,
+      "tokens": {
+       "in": 2000,
+       "out": 120
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "text": "One refund row of $1,003.00 was inserted against the later of the two identical charges on INV-10101. P-2 and P-4 still hold."
+      }
+     }
+    ],
+    "revisions": 0,
+    "contract_sha": "e86cefce12b1c39866c65b415d6627d8399aea7ee875bf5e9876d0a44ab50cb8",
+    "contract_locked_at": "2026-11-05T14:02:13.828Z"
+   },
+   "verdict": {
+    "green": true,
+    "failures": [],
+    "warnings": []
+   },
+   "approval_class": {
+    "class": "A",
+    "reason": "one table, 1 row, first attempt, ticket card"
+   },
+   "chips": [
+    {
+     "name": "Server-side COPY denied",
+     "ok": true,
+     "detail": "COPY \u2026 TO PROGRAM as executor \u2192 42501"
+    },
+    {
+     "name": "Metadata unreachable, no credentials",
+     "ok": true,
+     "detail": "169.254.169.254 unreachable, no password in env or config"
+    },
+    {
+     "name": "Caps in force",
+     "ok": true,
+     "detail": "--memory 512m, --cpus 1, --pids-limit 128, network none, timeout 5s, temp 64MB"
+    },
+    {
+     "name": "Container destroyed",
+     "ok": true,
+     "detail": "cddb3396dca9 at 2026-11-05T14:02:16.932Z"
+    }
+   ],
+   "strip": [
+    {
+     "step": 2,
+     "what": "lookup",
+     "role": "executor",
+     "container_id": "cddb3396dca9",
+     "elapsed_ms": 38,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 43201331,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    },
+    {
+     "step": 5,
+     "what": "sql",
+     "role": "executor",
+     "container_id": "cddb3396dca9",
+     "elapsed_ms": 54,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 46976204,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    }
+   ],
+   "destroyed_at": "2026-11-05T14:02:16.932Z",
+   "stopped": null,
+   "ledger": [
+    {
+     "service": "Sample VM row",
+     "detail": "orchestrator, run state, receipts volume"
+    },
+    {
+     "service": "Model provider: sample",
+     "detail": "sample-model, 9,870 tokens in / 514 out, 5,260 ms"
+    },
+    {
+     "service": "Sandbox container",
+     "detail": "cddb3396dca9, executor role, created 2026-11-05T14:02:11.000Z, destroyed 2026-11-05T14:02:16.932Z"
+    },
+    {
+     "service": "Live-db container",
+     "detail": "untouched until Approve, same flags and role"
+    }
+   ],
+   "explanation": "One refund row of $1,003.00 was inserted against the later of the two identical charges on INV-10101. P-2 and P-4 still hold.",
+   "reply": "Done on a sandbox copy, waiting for approval: one $1,003.00 refund for the duplicate charge on INV-10101.",
+   "live_checksum": "ef18c040f0aad6479fcc9cd287e1c2f69fa12f5044210b42c275cf996e49a135",
+   "apply_checksum_after": "51eba45b99cf4cb7d1ab89687abb99842d4779e632131b45959c1f1bbfe50972"
+  },
+  "E2": {
+   "run_id": "fx-e2",
+   "ticket": {
+    "id": "E2",
+    "demo": true,
+    "requester": "AR specialist",
+    "subject": "Dunning email showed the wrong balance",
+    "body": "Halvorsen Ledgerworks (ACC-4007) got a dunning email for $102.00, but their open invoices only add up to $51.00. Fix the balance.",
+    "created_on": "2026-11-01"
+   },
+   "source_kind": "ticket",
+   "status": "done",
+   "trace": {
+    "steps": [
+     {
+      "n": 1,
+      "name": "read",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:11.000Z",
+      "ms": 900,
+      "tokens": {
+       "in": 1450,
+       "out": 38
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "text": "Set ACC-4007's balance to the sum of its open invoices."
+      }
+     },
+     {
+      "n": 2,
+      "name": "lookup",
+      "actor": "sandbox",
+      "service": "sandbox container baeff7259468",
+      "started_at": "2026-11-05T14:02:11.940Z",
+      "ms": 38,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "sql": "SELECT amount_cents - paid_cents AS owed_cents FROM invoices WHERE account_id = 7 AND status = 'open'",
+       "table": "invoices",
+       "result": {
+        "count": 1,
+        "sums": {
+         "owed_cents": 5100
+        }
+       }
+      }
+     },
+     {
+      "n": 3,
+      "name": "contract",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:12.018Z",
+      "ms": 1810,
+      "tokens": {
+       "in": 3120,
+       "out": 286
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "version": 1,
+       "contract": {
+        "tables": [
+         "accounts"
+        ],
+        "expected_rows": {
+         "accounts": [
+          1,
+          1
+         ]
+        },
+        "scope_rule": {
+         "table": "accounts",
+         "where": "id = 7"
+        },
+        "checks": [
+         {
+          "name": "balance_matches_open",
+          "sql": "SELECT balance_cents = 5100 FROM accounts WHERE id = 7"
+         },
+         {
+          "name": "balance_not_negative",
+          "sql": "SELECT count(*) = 0 FROM accounts WHERE id = 7 AND balance_cents < 0"
+         }
+        ]
+       },
+       "sha256": "8ca95aa31af9f745fbc6a00395715ca77a29571cc6d343b57ec711106e98bda3",
+       "locked_at": "2026-11-05T14:02:13.828Z"
+      }
+     },
+     {
+      "n": 4,
+      "name": "sql",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:13.868Z",
+      "ms": 1150,
+      "tokens": {
+       "in": 3300,
+       "out": 70
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "sql": "UPDATE accounts SET balance_cents = (SELECT coalesce(sum(amount_cents - paid_cents), 0) FROM invoices WHERE account_id = 7 AND status = 'open') WHERE id = 7"
+      }
+     },
+     {
+      "n": 5,
+      "name": "run",
+      "actor": "sandbox",
+      "service": "sandbox container baeff7259468",
+      "started_at": "2026-11-05T14:02:15.058Z",
+      "ms": 54,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "command_tag": "UPDATE 1",
+       "elapsed_ms": 54,
+       "cap_ms": 5000,
+       "ok": true
+      }
+     },
+     {
+      "n": 6,
+      "name": "compare",
+      "actor": "drydock",
+      "service": "orchestrator",
+      "started_at": "2026-11-05T14:02:15.152Z",
+      "ms": 180,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "attempt": 1,
+       "green": true,
+       "lines": [
+        {
+         "kind": "row_count",
+         "ok": true,
+         "title": "accounts rows changed",
+         "lookup": 1,
+         "promised": [
+          1,
+          1
+         ],
+         "measured": 1
+        },
+        {
+         "kind": "tables",
+         "ok": true,
+         "title": "Only declared tables changed",
+         "detail": "accounts"
+        },
+        {
+         "kind": "scope",
+         "ok": true,
+         "title": "Every change inside scope_rule",
+         "detail": "1 of 1 changed rows match"
+        },
+        {
+         "kind": "check",
+         "ok": true,
+         "title": "balance_matches_open",
+         "sql": "SELECT balance_cents = 5100 FROM accounts WHERE id = 7"
+        },
+        {
+         "kind": "check",
+         "ok": true,
+         "title": "balance_not_negative",
+         "sql": "SELECT count(*) = 0 FROM accounts WHERE id = 7 AND balance_cents < 0"
+        },
+        {
+         "kind": "policy",
+         "ok": true,
+         "title": "P-5",
+         "detail": "An account's balance equals what is still owed on its open invoices.",
+         "before": 1,
+         "after": 0
+        },
+        {
+         "kind": "policy",
+         "ok": true,
+         "title": "P-1",
+         "detail": "An account with open invoices is never closed.",
+         "before": 0,
+         "after": 0
+        }
+       ],
+       "warnings": [],
+       "failures": [],
+       "effect": {
+        "rows_by_table": {
+         "accounts": {
+          "count_delta": 0,
+          "touched": 1
+         }
+        },
+        "sample": {
+         "accounts": [
+          {
+           "pk": 7,
+           "op": "update",
+           "label": "ACC-4007",
+           "before": {
+            "id": 7,
+            "customer_id": 7,
+            "code": "ACC-4007",
+            "status": "active",
+            "balance_cents": 10200,
+            "opened_on": "2024-07-07",
+            "usage_cents_oct": 11601
+           },
+           "after": {
+            "id": 7,
+            "customer_id": 7,
+            "code": "ACC-4007",
+            "status": "active",
+            "balance_cents": 5100,
+            "opened_on": "2024-07-07",
+            "usage_cents_oct": 11601
+           },
+           "changed": [
+            "balance_cents"
+           ]
+          }
+         ]
+        },
+        "column_summary": [
+         "accounts.balance_cents: 10200\u21925100 \u00d71"
+        ],
+        "money": [
+         {
+          "key": "accounts.balance_cents",
+          "before_cents": 10200,
+          "after_cents": 5100,
+          "delta_cents": -5100,
+          "column_changed": true,
+          "rows": 1,
+          "scope_label": "across the 1 changed row",
+          "null_rows": 0,
+          "direction": null,
+          "headline": true
+         }
+        ]
+       },
+       "command_tag": "UPDATE 1"
+      }
+     },
+     {
+      "n": 7,
+      "name": "explain",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:15.372Z",
+      "ms": 1400,
+      "tokens": {
+       "in": 2000,
+       "out": 120
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "text": "ACC-4007's balance moved from $102.00 to $51.00, the amount still owed on its one open invoice."
+      }
+     }
+    ],
+    "revisions": 0,
+    "contract_sha": "8ca95aa31af9f745fbc6a00395715ca77a29571cc6d343b57ec711106e98bda3",
+    "contract_locked_at": "2026-11-05T14:02:13.828Z"
+   },
+   "verdict": {
+    "green": true,
+    "failures": [],
+    "warnings": []
+   },
+   "approval_class": {
+    "class": "A",
+    "reason": "one table, 1 row, first attempt, ticket card"
+   },
+   "chips": [
+    {
+     "name": "Server-side COPY denied",
+     "ok": true,
+     "detail": "COPY \u2026 TO PROGRAM as executor \u2192 42501"
+    },
+    {
+     "name": "Metadata unreachable, no credentials",
+     "ok": true,
+     "detail": "169.254.169.254 unreachable, no password in env or config"
+    },
+    {
+     "name": "Caps in force",
+     "ok": true,
+     "detail": "--memory 512m, --cpus 1, --pids-limit 128, network none, timeout 5s, temp 64MB"
+    },
+    {
+     "name": "Container destroyed",
+     "ok": true,
+     "detail": "baeff7259468 at 2026-11-05T14:02:16.932Z"
+    }
+   ],
+   "strip": [
+    {
+     "step": 2,
+     "what": "lookup",
+     "role": "executor",
+     "container_id": "baeff7259468",
+     "elapsed_ms": 38,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 43201331,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    },
+    {
+     "step": 5,
+     "what": "sql",
+     "role": "executor",
+     "container_id": "baeff7259468",
+     "elapsed_ms": 54,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 46976204,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    }
+   ],
+   "destroyed_at": "2026-11-05T14:02:16.932Z",
+   "stopped": null,
+   "ledger": [
+    {
+     "service": "Sample VM row",
+     "detail": "orchestrator, run state, receipts volume"
+    },
+    {
+     "service": "Model provider: sample",
+     "detail": "sample-model, 9,870 tokens in / 514 out, 5,260 ms"
+    },
+    {
+     "service": "Sandbox container",
+     "detail": "baeff7259468, executor role, created 2026-11-05T14:02:11.000Z, destroyed 2026-11-05T14:02:16.932Z"
+    },
+    {
+     "service": "Live-db container",
+     "detail": "untouched until Approve, same flags and role"
+    }
+   ],
+   "explanation": "ACC-4007's balance moved from $102.00 to $51.00, the amount still owed on its one open invoice.",
+   "reply": "Done on a sandbox copy, waiting for approval: Halvorsen Ledgerworks' balance is now $51.00.",
+   "live_checksum": "ef18c040f0aad6479fcc9cd287e1c2f69fa12f5044210b42c275cf996e49a135",
+   "apply_checksum_after": "926a53b6e1755dc3d7a6e4bc7c4e094907e477760975a561d1c9b7c361c13c94"
+  },
+  "E5": {
+   "run_id": "fx-e5",
+   "ticket": {
+    "id": "E5",
+    "demo": true,
+    "requester": "Onboarding specialist",
+    "subject": "Duplicate accounts from signup",
+    "body": "Okafor & Lund Bakeries signed up three times during onboarding. Close the two extra accounts and keep the original.",
+    "created_on": "2026-11-01"
+   },
+   "source_kind": "ticket",
+   "status": "done",
+   "trace": {
+    "steps": [
+     {
+      "n": 1,
+      "name": "read",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:11.000Z",
+      "ms": 900,
+      "tokens": {
+       "in": 1450,
+       "out": 38
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "text": "Close the two newer Okafor & Lund Bakeries accounts and keep the original."
+      }
+     },
+     {
+      "n": 2,
+      "name": "lookup",
+      "actor": "sandbox",
+      "service": "sandbox container a8e0c435e771",
+      "started_at": "2026-11-05T14:02:11.940Z",
+      "ms": 38,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "sql": "SELECT id FROM accounts WHERE customer_id = 201",
+       "table": "accounts",
+       "result": {
+        "count": 3,
+        "sums": {}
+       }
+      }
+     },
+     {
+      "n": 3,
+      "name": "contract",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:12.018Z",
+      "ms": 1810,
+      "tokens": {
+       "in": 3120,
+       "out": 286
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "version": 1,
+       "contract": {
+        "tables": [
+         "accounts",
+         "subscriptions"
+        ],
+        "expected_rows": {
+         "accounts": [
+          2,
+          2
+         ],
+         "subscriptions": [
+          2,
+          2
+         ]
+        },
+        "scope_rule": {
+         "table": "accounts",
+         "where": "customer_id = 201 AND id <> 261"
+        },
+        "checks": [
+         {
+          "name": "original_kept",
+          "sql": "SELECT status = 'active' FROM accounts WHERE id = 261"
+         },
+         {
+          "name": "extras_closed",
+          "sql": "SELECT count(*) = 2 FROM accounts WHERE customer_id = 201 AND status = 'closed'"
+         }
+        ]
+       },
+       "sha256": "479b5e7e9066d1713e6f32c337b26b9403924fb94ccdf54019b47d7a701f9779",
+       "locked_at": "2026-11-05T14:02:13.828Z"
+      }
+     },
+     {
+      "n": 4,
+      "name": "sql",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:13.868Z",
+      "ms": 1150,
+      "tokens": {
+       "in": 3300,
+       "out": 70
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "sql": "WITH closed AS (UPDATE accounts SET status = 'closed' WHERE customer_id = 201 AND id <> (SELECT id FROM accounts WHERE customer_id = 201 ORDER BY opened_on, id LIMIT 1) RETURNING id) UPDATE subscriptions SET status = 'cancelled' WHERE status = 'active' AND account_id IN (SELECT id FROM closed)"
+      }
+     },
+     {
+      "n": 5,
+      "name": "run",
+      "actor": "sandbox",
+      "service": "sandbox container a8e0c435e771",
+      "started_at": "2026-11-05T14:02:15.058Z",
+      "ms": 54,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "command_tag": "UPDATE 2",
+       "elapsed_ms": 54,
+       "cap_ms": 5000,
+       "ok": true
+      }
+     },
+     {
+      "n": 6,
+      "name": "compare",
+      "actor": "drydock",
+      "service": "orchestrator",
+      "started_at": "2026-11-05T14:02:15.152Z",
+      "ms": 180,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "attempt": 1,
+       "green": true,
+       "lines": [
+        {
+         "kind": "row_count",
+         "ok": true,
+         "title": "accounts rows changed",
+         "lookup": 3,
+         "promised": [
+          2,
+          2
+         ],
+         "measured": 2
+        },
+        {
+         "kind": "row_count",
+         "ok": true,
+         "title": "subscriptions rows changed",
+         "lookup": 2,
+         "promised": [
+          2,
+          2
+         ],
+         "measured": 2
+        },
+        {
+         "kind": "tables",
+         "ok": true,
+         "title": "Only declared tables changed",
+         "detail": "accounts, subscriptions"
+        },
+        {
+         "kind": "scope",
+         "ok": true,
+         "title": "Every change inside scope_rule",
+         "detail": "2 of 2 changed rows match"
+        },
+        {
+         "kind": "check",
+         "ok": true,
+         "title": "original_kept",
+         "sql": "SELECT status = 'active' FROM accounts WHERE id = 261"
+        },
+        {
+         "kind": "check",
+         "ok": true,
+         "title": "extras_closed",
+         "sql": "SELECT count(*) = 2 FROM accounts WHERE customer_id = 201 AND status = 'closed'"
+        },
+        {
+         "kind": "policy",
+         "ok": true,
+         "title": "P-6",
+         "detail": "A closed account has no active subscription.",
+         "before": 0,
+         "after": 0
+        },
+        {
+         "kind": "policy",
+         "ok": true,
+         "title": "P-1",
+         "detail": "An account with open invoices is never closed.",
+         "before": 0,
+         "after": 0
+        }
+       ],
+       "warnings": [],
+       "failures": [],
+       "effect": {
+        "rows_by_table": {
+         "accounts": {
+          "count_delta": 0,
+          "touched": 2
+         },
+         "subscriptions": {
+          "count_delta": 0,
+          "touched": 2
+         }
+        },
+        "sample": {
+         "accounts": [
+          {
+           "pk": 262,
+           "op": "update",
+           "label": "ACC-4262",
+           "before": {
+            "id": 262,
+            "customer_id": 201,
+            "code": "ACC-4262",
+            "status": "active",
+            "balance_cents": 0,
+            "opened_on": "2026-02-14",
+            "usage_cents_oct": 16512
+           },
+           "after": {
+            "id": 262,
+            "customer_id": 201,
+            "code": "ACC-4262",
+            "status": "closed",
+            "balance_cents": 0,
+            "opened_on": "2026-02-14",
+            "usage_cents_oct": 16512
+           },
+           "changed": [
+            "status"
+           ]
+          },
+          {
+           "pk": 263,
+           "op": "update",
+           "label": "ACC-4263",
+           "before": {
+            "id": 263,
+            "customer_id": 201,
+            "code": "ACC-4263",
+            "status": "active",
+            "balance_cents": 0,
+            "opened_on": "2026-03-26",
+            "usage_cents_oct": 19749
+           },
+           "after": {
+            "id": 263,
+            "customer_id": 201,
+            "code": "ACC-4263",
+            "status": "closed",
+            "balance_cents": 0,
+            "opened_on": "2026-03-26",
+            "usage_cents_oct": 19749
+           },
+           "changed": [
+            "status"
+           ]
+          }
+         ],
+         "subscriptions": [
+          {
+           "pk": 262,
+           "op": "update",
+           "label": "starter",
+           "before": {
+            "id": 262,
+            "account_id": 262,
+            "plan": "starter",
+            "status": "active",
+            "monthly_cents": 4900
+           },
+           "after": {
+            "id": 262,
+            "account_id": 262,
+            "plan": "starter",
+            "status": "cancelled",
+            "monthly_cents": 4900
+           },
+           "changed": [
+            "status"
+           ]
+          },
+          {
+           "pk": 263,
+           "op": "update",
+           "label": "starter",
+           "before": {
+            "id": 263,
+            "account_id": 263,
+            "plan": "starter",
+            "status": "active",
+            "monthly_cents": 4900
+           },
+           "after": {
+            "id": 263,
+            "account_id": 263,
+            "plan": "starter",
+            "status": "cancelled",
+            "monthly_cents": 4900
+           },
+           "changed": [
+            "status"
+           ]
+          }
+         ]
+        },
+        "column_summary": [
+         "accounts.status: active\u2192closed \u00d72",
+         "subscriptions.status: active\u2192cancelled \u00d72"
+        ],
+        "money": [
+         {
+          "key": "subscriptions.monthly_cents",
+          "before_cents": 9800,
+          "after_cents": 9800,
+          "delta_cents": 0,
+          "column_changed": false,
+          "rows": 2,
+          "scope_label": "value of the 2 changed rows",
+          "null_rows": 0,
+          "direction": null,
+          "headline": true
+         }
+        ]
+       },
+       "command_tag": "UPDATE 2"
+      }
+     },
+     {
+      "n": 7,
+      "name": "explain",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:15.372Z",
+      "ms": 1400,
+      "tokens": {
+       "in": 2000,
+       "out": 120
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "text": "Two duplicate accounts were closed and their 2 active subscriptions cancelled ($98.00/month). The original ACC-4261 stays active."
+      }
+     }
+    ],
+    "revisions": 0,
+    "contract_sha": "479b5e7e9066d1713e6f32c337b26b9403924fb94ccdf54019b47d7a701f9779",
+    "contract_locked_at": "2026-11-05T14:02:13.828Z"
+   },
+   "verdict": {
+    "green": true,
+    "failures": [],
+    "warnings": []
+   },
+   "approval_class": {
+    "class": "B",
+    "reason": "2 tables changed"
+   },
+   "chips": [
+    {
+     "name": "Server-side COPY denied",
+     "ok": true,
+     "detail": "COPY \u2026 TO PROGRAM as executor \u2192 42501"
+    },
+    {
+     "name": "Metadata unreachable, no credentials",
+     "ok": true,
+     "detail": "169.254.169.254 unreachable, no password in env or config"
+    },
+    {
+     "name": "Caps in force",
+     "ok": true,
+     "detail": "--memory 512m, --cpus 1, --pids-limit 128, network none, timeout 5s, temp 64MB"
+    },
+    {
+     "name": "Container destroyed",
+     "ok": true,
+     "detail": "a8e0c435e771 at 2026-11-05T14:02:16.932Z"
+    }
+   ],
+   "strip": [
+    {
+     "step": 2,
+     "what": "lookup",
+     "role": "executor",
+     "container_id": "a8e0c435e771",
+     "elapsed_ms": 38,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 43201331,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    },
+    {
+     "step": 5,
+     "what": "sql",
+     "role": "executor",
+     "container_id": "a8e0c435e771",
+     "elapsed_ms": 54,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 46976204,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    }
+   ],
+   "destroyed_at": "2026-11-05T14:02:16.932Z",
+   "stopped": null,
+   "ledger": [
+    {
+     "service": "Sample VM row",
+     "detail": "orchestrator, run state, receipts volume"
+    },
+    {
+     "service": "Model provider: sample",
+     "detail": "sample-model, 9,870 tokens in / 514 out, 5,260 ms"
+    },
+    {
+     "service": "Sandbox container",
+     "detail": "a8e0c435e771, executor role, created 2026-11-05T14:02:11.000Z, destroyed 2026-11-05T14:02:16.932Z"
+    },
+    {
+     "service": "Live-db container",
+     "detail": "untouched until Approve, same flags and role"
+    }
+   ],
+   "explanation": "Two duplicate accounts were closed and their 2 active subscriptions cancelled ($98.00/month). The original ACC-4261 stays active.",
+   "reply": "Done on a sandbox copy, waiting for engineer approval: the two extra accounts are closed, ACC-4261 is kept.",
+   "live_checksum": "ef18c040f0aad6479fcc9cd287e1c2f69fa12f5044210b42c275cf996e49a135",
+   "apply_checksum_after": "e47e093bab30736e63c83cd7cee7d6701b303b5ce022504c711f7e8b05ccd7d3"
+  },
+  "E6": {
+   "run_id": "fx-e6",
+   "ticket": {
+    "id": "E6",
+    "demo": true,
+    "requester": "Finance controller",
+    "subject": "Enterprise loyalty discount",
+    "body": "Finance approved the 10% loyalty discount for every active Enterprise customer, effective next cycle. Update their monthly price.",
+    "created_on": "2026-11-01"
+   },
+   "source_kind": "ticket",
+   "status": "done",
+   "trace": {
+    "steps": [
+     {
+      "n": 1,
+      "name": "read",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:11.000Z",
+      "ms": 900,
+      "tokens": {
+       "in": 1450,
+       "out": 38
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "text": "Cut monthly_cents by 10% for every active Enterprise subscription."
+      }
+     },
+     {
+      "n": 2,
+      "name": "lookup",
+      "actor": "sandbox",
+      "service": "sandbox container 36ff6a8332ce",
+      "started_at": "2026-11-05T14:02:11.940Z",
+      "ms": 38,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "sql": "SELECT monthly_cents FROM subscriptions WHERE plan = 'enterprise' AND status = 'active'",
+       "table": "subscriptions",
+       "result": {
+        "count": 68,
+        "sums": {
+         "monthly_cents": 6826900
+        }
+       }
+      }
+     },
+     {
+      "n": 3,
+      "name": "contract",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:12.018Z",
+      "ms": 1810,
+      "tokens": {
+       "in": 3120,
+       "out": 286
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "version": 1,
+       "contract": {
+        "tables": [
+         "subscriptions"
+        ],
+        "expected_rows": {
+         "subscriptions": [
+          60,
+          75
+         ]
+        },
+        "scope_rule": {
+         "table": "subscriptions",
+         "where": "plan = 'enterprise' AND status = 'active'"
+        },
+        "checks": [
+         {
+          "name": "enterprise_total_near_90pct",
+          "sql": "SELECT sum(monthly_cents) BETWEEN 6100000 AND 6200000 FROM subscriptions WHERE plan = 'enterprise' AND status = 'active'"
+         },
+         {
+          "name": "monthly_positive",
+          "sql": "SELECT count(*) = 0 FROM subscriptions WHERE monthly_cents <= 0"
+         }
+        ]
+       },
+       "sha256": "3ab19ff47024b44c52f9a510c0d53cf4760b9ec027be0d408129c098706d457f",
+       "locked_at": "2026-11-05T14:02:13.828Z"
+      }
+     },
+     {
+      "n": 4,
+      "name": "sql",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:13.868Z",
+      "ms": 1150,
+      "tokens": {
+       "in": 3300,
+       "out": 70
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "sql": "UPDATE subscriptions SET monthly_cents = round(monthly_cents * 0.9) WHERE plan = 'enterprise' AND status = 'active'"
+      }
+     },
+     {
+      "n": 5,
+      "name": "run",
+      "actor": "sandbox",
+      "service": "sandbox container 36ff6a8332ce",
+      "started_at": "2026-11-05T14:02:15.058Z",
+      "ms": 54,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "command_tag": "UPDATE 68",
+       "elapsed_ms": 54,
+       "cap_ms": 5000,
+       "ok": true
+      }
+     },
+     {
+      "n": 6,
+      "name": "compare",
+      "actor": "drydock",
+      "service": "orchestrator",
+      "started_at": "2026-11-05T14:02:15.152Z",
+      "ms": 180,
+      "tokens": null,
+      "model_id": null,
+      "payload": {
+       "attempt": 1,
+       "green": true,
+       "lines": [
+        {
+         "kind": "row_count",
+         "ok": true,
+         "title": "subscriptions rows changed",
+         "lookup": 68,
+         "promised": [
+          60,
+          75
+         ],
+         "measured": 68
+        },
+        {
+         "kind": "tables",
+         "ok": true,
+         "title": "Only declared tables changed",
+         "detail": "subscriptions"
+        },
+        {
+         "kind": "scope",
+         "ok": true,
+         "title": "Every change inside scope_rule",
+         "detail": "68 of 68 changed rows match"
+        },
+        {
+         "kind": "check",
+         "ok": true,
+         "title": "enterprise_total_near_90pct",
+         "sql": "SELECT sum(monthly_cents) BETWEEN 6100000 AND 6200000 FROM subscriptions WHERE plan = 'enterprise' AND status = 'active'"
+        },
+        {
+         "kind": "check",
+         "ok": true,
+         "title": "monthly_positive",
+         "sql": "SELECT count(*) = 0 FROM subscriptions WHERE monthly_cents <= 0"
+        }
+       ],
+       "warnings": [],
+       "failures": [],
+       "effect": {
+        "rows_by_table": {
+         "subscriptions": {
+          "count_delta": 0,
+          "touched": 68
+         }
+        },
+        "sample": {
+         "subscriptions": [
+          {
+           "pk": 1,
+           "op": "update",
+           "label": "enterprise",
+           "before": {
+            "id": 1,
+            "account_id": 1,
+            "plan": "enterprise",
+            "status": "active",
+            "monthly_cents": 100500
+           },
+           "after": {
+            "id": 1,
+            "account_id": 1,
+            "plan": "enterprise",
+            "status": "active",
+            "monthly_cents": 90450
+           },
+           "changed": [
+            "monthly_cents"
+           ]
+          },
+          {
+           "pk": 3,
+           "op": "update",
+           "label": "enterprise",
+           "before": {
+            "id": 3,
+            "account_id": 3,
+            "plan": "enterprise",
+            "status": "active",
+            "monthly_cents": 100100
+           },
+           "after": {
+            "id": 3,
+            "account_id": 3,
+            "plan": "enterprise",
+            "status": "active",
+            "monthly_cents": 90090
+           },
+           "changed": [
+            "monthly_cents"
+           ]
+          },
+          {
+           "pk": 8,
+           "op": "update",
+           "label": "enterprise",
+           "before": {
+            "id": 8,
+            "account_id": 8,
+            "plan": "enterprise",
+            "status": "active",
+            "monthly_cents": 100000
+           },
+           "after": {
+            "id": 8,
+            "account_id": 8,
+            "plan": "enterprise",
+            "status": "active",
+            "monthly_cents": 90000
+           },
+           "changed": [
+            "monthly_cents"
+           ]
+          },
+          {
+           "pk": 11,
+           "op": "update",
+           "label": "enterprise",
+           "before": {
+            "id": 11,
+            "account_id": 11,
+            "plan": "enterprise",
+            "status": "active",
+            "monthly_cents": 100200
+           },
+           "after": {
+            "id": 11,
+            "account_id": 11,
+            "plan": "enterprise",
+            "status": "active",
+            "monthly_cents": 90180
+           },
+           "changed": [
+            "monthly_cents"
+           ]
+          },
+          {
+           "pk": 12,
+           "op": "update",
+           "label": "enterprise",
+           "before": {
+            "id": 12,
+            "account_id": 12,
+            "plan": "enterprise",
+            "status": "active",
+            "monthly_cents": 100700
+           },
+           "after": {
+            "id": 12,
+            "account_id": 12,
+            "plan": "enterprise",
+            "status": "active",
+            "monthly_cents": 90630
+           },
+           "changed": [
+            "monthly_cents"
+           ]
+          }
+         ]
+        },
+        "column_summary": [
+         "subscriptions.monthly_cents: \u00d70.9 each \u00d768"
+        ],
+        "money": [
+         {
+          "key": "subscriptions.monthly_cents",
+          "before_cents": 6826900,
+          "after_cents": 6144210,
+          "delta_cents": -682690,
+          "column_changed": true,
+          "rows": 68,
+          "scope_label": "across the 68 changed rows",
+          "null_rows": 0,
+          "direction": null,
+          "headline": true
+         }
+        ]
+       },
+       "command_tag": "UPDATE 68"
+      }
+     },
+     {
+      "n": 7,
+      "name": "explain",
+      "actor": "model",
+      "service": "sample provider, sample-model",
+      "started_at": "2026-11-05T14:02:15.372Z",
+      "ms": 1400,
+      "tokens": {
+       "in": 2000,
+       "out": 120
+      },
+      "model_id": "sample-model",
+      "payload": {
+       "text": "68 active Enterprise subscriptions now pay 10% less: Enterprise MRR across the 68 changed rows $68,269.00 \u2192 $61,442.10 \u00b7 \u2212$6,826.90/mo (\u221210.0%)."
+      }
+     }
+    ],
+    "revisions": 0,
+    "contract_sha": "3ab19ff47024b44c52f9a510c0d53cf4760b9ec027be0d408129c098706d457f",
+    "contract_locked_at": "2026-11-05T14:02:13.828Z"
+   },
+   "verdict": {
+    "green": true,
+    "failures": [],
+    "warnings": []
+   },
+   "approval_class": {
+    "class": "B",
+    "reason": "68 rows > 50; $6,826.90 moved, over the ops limit of $2,500.00"
+   },
+   "chips": [
+    {
+     "name": "Server-side COPY denied",
+     "ok": true,
+     "detail": "COPY \u2026 TO PROGRAM as executor \u2192 42501"
+    },
+    {
+     "name": "Metadata unreachable, no credentials",
+     "ok": true,
+     "detail": "169.254.169.254 unreachable, no password in env or config"
+    },
+    {
+     "name": "Caps in force",
+     "ok": true,
+     "detail": "--memory 512m, --cpus 1, --pids-limit 128, network none, timeout 5s, temp 64MB"
+    },
+    {
+     "name": "Container destroyed",
+     "ok": true,
+     "detail": "36ff6a8332ce at 2026-11-05T14:02:16.932Z"
+    }
+   ],
+   "strip": [
+    {
+     "step": 2,
+     "what": "lookup",
+     "role": "executor",
+     "container_id": "36ff6a8332ce",
+     "elapsed_ms": 38,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 43201331,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    },
+    {
+     "step": 5,
+     "what": "sql",
+     "role": "executor",
+     "container_id": "36ff6a8332ce",
+     "elapsed_ms": 54,
+     "cap_ms": 5000,
+     "temp_cap": "64MB",
+     "mem_peak_bytes": 46976204,
+     "mem_cap_bytes": 536870912,
+     "stopped_by": null,
+     "code": null
+    }
+   ],
+   "destroyed_at": "2026-11-05T14:02:16.932Z",
+   "stopped": null,
+   "ledger": [
+    {
+     "service": "Sample VM row",
+     "detail": "orchestrator, run state, receipts volume"
+    },
+    {
+     "service": "Model provider: sample",
+     "detail": "sample-model, 9,870 tokens in / 514 out, 5,260 ms"
+    },
+    {
+     "service": "Sandbox container",
+     "detail": "36ff6a8332ce, executor role, created 2026-11-05T14:02:11.000Z, destroyed 2026-11-05T14:02:16.932Z"
+    },
+    {
+     "service": "Live-db container",
+     "detail": "untouched until Approve, same flags and role"
+    }
+   ],
+   "explanation": "68 active Enterprise subscriptions now pay 10% less: Enterprise MRR across the 68 changed rows $68,269.00 \u2192 $61,442.10 \u00b7 \u2212$6,826.90/mo (\u221210.0%).",
+   "reply": "Done on a sandbox copy, waiting for engineer approval: the 10% loyalty discount is set on 68 Enterprise subscriptions (\u2212$6,826.90/mo).",
+   "live_checksum": "ef18c040f0aad6479fcc9cd287e1c2f69fa12f5044210b42c275cf996e49a135",
+   "apply_checksum_after": "75fe3e286e8eb5a68d17405a4570ccec3a077af46fe506260b64c712a767e40f"
+  }
+ },
+ "eval": null
+}

@@ -1,0 +1,132 @@
+{
+  "N": 588126318,
+  "T_ms": 5000,
+  "L_bytes": 67108864,
+  "r_max_rows_per_ms": 11762.526355410615,
+  "b_bytes_per_row": 14.001038222222222,
+  "g_max_ms": 460.17330000177026,
+  "per_m": [
+    {
+      "M": 1000000,
+      "form": "from",
+      "rows_per_ms": 5156.79226893703,
+      "temp_bytes": 14000128,
+      "stopped_by": null,
+      "runs": 5
+    },
+    {
+      "M": 1000000,
+      "form": "stream",
+      "rows_per_ms": 11388.354268924599,
+      "temp_bytes": 0,
+      "stopped_by": null,
+      "runs": 5
+    },
+    {
+      "M": 4000000,
+      "form": "from",
+      "rows_per_ms": 5240.767405571198,
+      "temp_bytes": 56000512,
+      "stopped_by": null,
+      "runs": 5
+    },
+    {
+      "M": 4000000,
+      "form": "stream",
+      "rows_per_ms": 11762.526355410615,
+      "temp_bytes": 0,
+      "stopped_by": null,
+      "runs": 5
+    },
+    {
+      "M": 4500000,
+      "form": "from",
+      "rows_per_ms": 5081.214749072678,
+      "temp_bytes": 63004672,
+      "stopped_by": null,
+      "runs": 5
+    },
+    {
+      "M": 4500000,
+      "form": "stream",
+      "rows_per_ms": 11266.815722465779,
+      "temp_bytes": 0,
+      "stopped_by": null,
+      "runs": 5
+    },
+    {
+      "M": 4750000,
+      "form": "from",
+      "rows_per_ms": 5141.126631901827,
+      "temp_bytes": 66502656,
+      "stopped_by": null,
+      "runs": 5
+    },
+    {
+      "M": 4750000,
+      "form": "stream",
+      "rows_per_ms": 11470.326868093654,
+      "temp_bytes": 0,
+      "stopped_by": null,
+      "runs": 5
+    },
+    {
+      "M": 5000000,
+      "form": "from",
+      "rows_per_ms": 0.0,
+      "temp_bytes": 0,
+      "stopped_by": "53400",
+      "runs": 0
+    },
+    {
+      "M": 5000000,
+      "form": "stream",
+      "rows_per_ms": 11595.090175016292,
+      "temp_bytes": 0,
+      "stopped_by": null,
+      "runs": 5
+    },
+    {
+      "M": 16000000,
+      "form": "from",
+      "rows_per_ms": 0.0,
+      "temp_bytes": 0,
+      "stopped_by": "53400",
+      "runs": 0
+    },
+    {
+      "M": 16000000,
+      "form": "stream",
+      "rows_per_ms": 11341.951326015884,
+      "temp_bytes": 0,
+      "stopped_by": null,
+      "runs": 5
+    }
+  ],
+  "cap_first_fires_at_M": 5000000,
+  "date": "2026-11-04",
+  "host": "Windows 11",
+  "gate": [
+    {
+      "stopped": true,
+      "code": "53400",
+      "backstop": false,
+      "ms": 1058,
+      "template_unchanged": true
+    },
+    {
+      "stopped": true,
+      "code": "53400",
+      "backstop": false,
+      "ms": 1032,
+      "template_unchanged": true
+    },
+    {
+      "stopped": true,
+      "code": "53400",
+      "backstop": false,
+      "ms": 1122,
+      "template_unchanged": true
+    }
+  ]
+}

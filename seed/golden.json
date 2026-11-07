@@ -1,0 +1,131 @@
+{
+  "E1": {
+    "demo": true,
+    "class": "A",
+    "note": "class A demo example: one table (payments), 1 row inserted; ops lead may approve",
+    "sql": "INSERT INTO payments (invoice_id, amount_cents, paid_on, method, kind, refund_of) SELECT invoice_id, amount_cents, DATE '2026-11-01', method, 'refund', id FROM payments WHERE id = 2565",
+    "expected": {
+      "payments": {
+        "count_delta": 1,
+        "touched": 1
+      }
+    },
+    "expected_amount_cents": 100300
+  },
+  "E2": {
+    "demo": true,
+    "class": "A",
+    "sql": "UPDATE accounts SET balance_cents = (SELECT coalesce(sum(amount_cents - paid_cents), 0) FROM invoices WHERE account_id = 7 AND status = 'open') WHERE id = 7",
+    "expected": {
+      "accounts": {
+        "count_delta": 0,
+        "touched": 1
+      }
+    },
+    "expected_amount_cents": 5100
+  },
+  "E5": {
+    "demo": true,
+    "class": "B",
+    "sql": "WITH closed AS (UPDATE accounts SET status = 'closed' WHERE customer_id = 201 AND id <> (SELECT id FROM accounts WHERE customer_id = 201 ORDER BY opened_on, id LIMIT 1) RETURNING id) UPDATE subscriptions SET status = 'cancelled' WHERE status = 'active' AND account_id IN (SELECT id FROM closed)",
+    "expected": {
+      "accounts": {
+        "count_delta": 0,
+        "touched": 2
+      },
+      "subscriptions": {
+        "count_delta": 0,
+        "touched": 2
+      }
+    },
+    "expected_amount_cents": 9800
+  },
+  "E6": {
+    "demo": true,
+    "class": "B",
+    "sql": "UPDATE subscriptions SET monthly_cents = round(monthly_cents * 0.9) WHERE plan = 'enterprise' AND status = 'active'",
+    "expected": {
+      "subscriptions": {
+        "count_delta": 0,
+        "touched": 68
+      }
+    },
+    "expected_amount_cents": 682690,
+    "mrr_before_cents": 8240100,
+    "mrr_after_cents": 7557410
+  },
+  "E8": {
+    "demo": true,
+    "class": "B",
+    "sql": "WITH w AS (UPDATE invoices SET status = 'written_off' WHERE status = 'open' AND due_on <= DATE '2026-11-01' - 90 AND NOT EXISTS (SELECT 1 FROM payment_plans p WHERE p.invoice_id = invoices.id AND p.status = 'active') RETURNING account_id, amount_cents - paid_cents AS owed) UPDATE accounts a SET balance_cents = a.balance_cents - s.owed FROM (SELECT account_id, sum(owed) AS owed FROM w GROUP BY account_id) s WHERE a.id = s.account_id",
+    "naive_sql": "UPDATE invoices SET status = 'written_off' WHERE status = 'open' AND due_on <= DATE '2026-11-01' - 90",
+    "expected": {
+      "invoices": {
+        "count_delta": 0,
+        "touched": 87
+      },
+      "accounts": {
+        "count_delta": 0,
+        "touched": 75
+      }
+    },
+    "expected_amount_cents": 3131900,
+    "written_off_cents": 3131900,
+    "p7_protected_cents": 116918,
+    "p7_arr_cents": 2644800
+  },
+  "E11": {
+    "demo": true,
+    "class": "C",
+    "note": "must be stopped by a real Postgres cap; nothing changes. UI label = sandbox.runner.cap_label(code)",
+    "metric_note": "re-sums all three metrics (api_call, seat_day, gb_stored), not only seat_day: the stored total is one figure, so every metric is recomputed",
+    "sql": "UPDATE accounts a SET usage_cents_oct = (SELECT coalesce(sum(u.amount_cents), 0) FROM usage_events u WHERE u.account_id = a.id AND u.occurred_at >= DATE '2026-10-01' AND u.occurred_at < DATE '2026-11-01')",
+    "naive_sql": "UPDATE accounts SET usage_cents_oct = usage_cents_oct / 2",
+    "naive_note": "wrong: never reads usage_events; halving is not a re-rate, and it finishes without a stop",
+    "expected": {},
+    "expected_stop": [
+      "53400",
+      "57014"
+    ],
+    "observed_stop": "53400",
+    "rows_label": "usage_events: 588,126,318 synthetic rows",
+    "expected_amount_cents": 0,
+    "stored_usage_oct_cents": 4632598
+  },
+  "H1": {
+    "demo": false,
+    "class": "A",
+    "sql": "INSERT INTO credits (account_id, amount_cents, reason, created_on) SELECT id, 5000, 'sla_breach', DATE '2026-11-01' FROM accounts WHERE code = 'ACC-4022'",
+    "expected": {
+      "credits": {
+        "count_delta": 1,
+        "touched": 1
+      }
+    },
+    "expected_amount_cents": 5000
+  },
+  "H2": {
+    "demo": false,
+    "class": "A",
+    "sql": "DELETE FROM credits WHERE account_id = 82 AND reason = 'promo'",
+    "expected": {
+      "credits": {
+        "count_delta": -1,
+        "touched": 0
+      }
+    },
+    "expected_amount_cents": 5500
+  },
+  "H3": {
+    "demo": false,
+    "class": "A",
+    "sql": "INSERT INTO credits (account_id, amount_cents, reason, created_on) SELECT DISTINCT account_id, 2500, 'goodwill', DATE '2026-11-01' FROM credits WHERE reason = 'sla_breach' AND created_on >= DATE '2026-10-01' AND created_on < DATE '2026-11-01'",
+    "expected": {
+      "credits": {
+        "count_delta": 4,
+        "touched": 4
+      }
+    },
+    "expected_amount_cents": 10000
+  }
+}

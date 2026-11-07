@@ -1,0 +1,47 @@
+# Policies live here only (never in a DB table). Each check_sql returns one number:
+# the count of violating rows; 0 = policy holds. Run before and after the SQL: only added violations fail.
+- id: P-1
+  text: An account with open invoices is never closed.
+  check_sql: >-
+    SELECT count(*) FROM accounts a WHERE a.status = 'closed'
+    AND EXISTS (SELECT 1 FROM invoices i WHERE i.account_id = a.id AND i.status = 'open')
+- id: P-2
+  text: A charge is never refunded twice.
+  check_sql: >-
+    SELECT count(*) FROM (SELECT refund_of FROM payments WHERE kind = 'refund'
+    GROUP BY refund_of HAVING count(*) > 1) v
+- id: P-3
+  text: An invoice's paid amount never exceeds its amount.
+  check_sql: SELECT count(*) FROM invoices WHERE paid_cents > amount_cents
+- id: P-7
+  text: Invoices on an active payment plan are never written off.
+  check_sql: >-
+    SELECT count(*) FROM invoices i WHERE i.status = 'written_off'
+    AND EXISTS (SELECT 1 FROM payment_plans p WHERE p.invoice_id = i.id AND p.status = 'active')
+  # optional detail_sql: one row per violator, so the panel shows measured names and money, not just a count.
+  # arr_cents = 12 x the invoice's subscription price when that subscription is active (golden p7_arr_cents rule)
+  detail_sql: >-
+    SELECT c.name AS customer, i.amount_cents - i.paid_cents AS owed_cents,
+    CASE WHEN s.status = 'active' THEN 12 * s.monthly_cents ELSE 0 END AS arr_cents
+    FROM invoices i JOIN accounts a ON a.id = i.account_id JOIN customers c ON c.id = a.customer_id
+    LEFT JOIN subscriptions s ON s.id = i.subscription_id
+    WHERE i.status = 'written_off'
+    AND EXISTS (SELECT 1 FROM payment_plans p WHERE p.invoice_id = i.id AND p.status = 'active')
+    ORDER BY i.id
+- id: P-4
+  text: A paid invoice keeps net charges at or above its amount.
+  check_sql: >-
+    SELECT count(*) FROM invoices i WHERE i.status = 'paid' AND i.amount_cents >
+    (SELECT coalesce(sum(CASE p.kind WHEN 'charge' THEN p.amount_cents ELSE -p.amount_cents END), 0)
+     FROM payments p WHERE p.invoice_id = i.id)
+- id: P-5
+  text: An account's balance equals what is still owed on its open invoices.
+  check_sql: >-
+    SELECT count(*) FROM accounts a WHERE a.balance_cents <>
+    (SELECT coalesce(sum(i.amount_cents - i.paid_cents), 0) FROM invoices i
+     WHERE i.account_id = a.id AND i.status = 'open')
+- id: P-6
+  text: A closed account has no active subscription.
+  check_sql: >-
+    SELECT count(*) FROM subscriptions s JOIN accounts a ON a.id = s.account_id
+    WHERE a.status = 'closed' AND s.status = 'active'
