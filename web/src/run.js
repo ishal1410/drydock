@@ -30,6 +30,12 @@ export function primaryLine(a) {
   return (a?.lines || []).filter((l) => l.kind === 'row_count').sort((x, y) => (y.measured ?? 0) - (x.measured ?? 0))[0] || null
 }
 
+// The lookup a promise rests on: it counted at least the promise's low end (the promise is those rows or a subset, like
+// E1's 2 charges counted, 1 removed). The API sends the table's latest lookup, which can be a count(*) answering
+// "1 row" under an 87-row promise (live E8 run 242b6c19); that backs nothing, so the screen says nothing about it.
+export const backedLookup = (line) => (line?.promised && line.lookup !== null && line.lookup !== undefined
+  && line.lookup >= line.promised[0] ? line.lookup : null)
+
 export function inRange(line) {
   if (!line?.promised || line.measured === null || line.measured === undefined) return null
   return line.measured >= line.promised[0] && line.measured <= line.promised[1]

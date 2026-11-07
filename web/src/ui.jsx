@@ -1,5 +1,5 @@
 // Real product components, shared by the app and the landing page so the landing's visuals are the actual UI.
-import { attemptMoney, author, dash, inRange, int, nowViolating, owedBy, plural, primaryLine, range, revisedLine, rows, trackScale, usd, verdictLine, warningsFor, whyFailed } from './run.js'
+import { attemptMoney, author, backedLookup, dash, inRange, int, nowViolating, owedBy, plural, primaryLine, range, revisedLine, rows, trackScale, usd, verdictLine, warningsFor, whyFailed } from './run.js'
 
 export function RangeTrack({ line }) {
   if (!line?.promised) return null
@@ -34,11 +34,12 @@ export function ProofCard({ attempt, prev, cls, note, verdict }) {
   const money = attemptMoney(attempt, verdict?.tone)
   const warnings = warningsFor(attempt)
   const others = (attempt?.lines || []).filter((l) => l.kind === 'row_count' && l !== line)
+  const counted = backedLookup(line)
   return (
     <section className={`run ${attempt?.green ? 'green' : 'red'}`} aria-label={`Attempt ${attempt?.attempt ?? ''} result`}>
-      {line && (
+      {line && (counted !== null || note) && (
         <div className="lk-row stagein">
-          <h2 className="lk">AI counted {int(line.lookup)} {rows(line.lookup)} in {line.title.split(' ')[0]} first</h2>
+          {counted !== null && <h2 className="lk">AI counted {int(counted)} {rows(counted)} in {line.title.split(' ')[0]} first</h2>}
           {note && <span className="note">{note}</span>}
         </div>
       )}
@@ -101,7 +102,7 @@ export function CheckLines({ lines, plain = false, tag = author }) {
             <span className="res">{l.ok ? 'Pass' : 'Fail'}</span>
             <span className="tag">{tag(l.kind)}</span>
           </div>
-          {!plain && l.kind === 'row_count' && <p>AI counted {int(l.lookup)}, promised {range(l.promised)}, changed {int(l.measured)}</p>}
+          {!plain && l.kind === 'row_count' && <p>{backedLookup(l) !== null ? `AI counted ${int(l.lookup)}, promised` : 'Promised'} {range(l.promised)}, changed {int(l.measured)}</p>}
           {!plain && l.kind === 'policy' && <p>Company rule {l.title}. Rows breaking it: {dash(l.before)} before, {dash(l.after)} after.{l.ok && l.before > 0 && l.after === l.before ? ' Already there before this change; none added.' : ''}</p>}
           {!plain && l.kind !== 'row_count' && l.kind !== 'policy' && l.detail && <p>{l.detail}</p>}
           {!plain && l.sql && <pre><code>{l.sql}</code></pre>}

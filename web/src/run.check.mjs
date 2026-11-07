@@ -1,7 +1,7 @@
 // Run: node src/run.check.mjs   Asserts the honesty rules the UI depends on, including the cases no fixture exercises.
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { noRunLine, trackScale, attemptsOf, dash, evalLine, moneyLines, plainReason, revisedLine, whyFailed, plural, nowViolating, range, verdictLine, warningsFor, author, approvalOf, usd, pollRun, rowLabel, attemptMoney } from './run.js'
+import { noRunLine, trackScale, attemptsOf, dash, evalLine, moneyLines, plainReason, revisedLine, whyFailed, plural, nowViolating, range, verdictLine, warningsFor, author, approvalOf, usd, pollRun, rowLabel, attemptMoney, backedLookup, primaryLine } from './run.js'
 
 const FX = JSON.parse(readFileSync(new URL('./fixtures.json', import.meta.url)))
 const [a1, a2] = attemptsOf(FX.runs.E8)
@@ -67,4 +67,18 @@ const eff = { money: [{ key: 'invoices.amount_cents', delta_cents: -100, rows: 1
 assert.deepEqual(attemptMoney({ green: false, effect: eff }, 'red'), [])
 assert.deepEqual(attemptMoney({ green: true, effect: eff }, 'ink'), [])
 assert.equal(attemptMoney(a2, 'green').length > 0, true)
+// Headline: only the lookup the promise rests on. Live E8 run 242b6c19: the last invoices lookup was a count(*) (1 result row),
+// the promise 87; "AI counted 1 row" above "87 promised" reads as a bug, so no headline.
+assert.equal(backedLookup({ lookup: 90, promised: [90, 90] }), 90)
+assert.equal(backedLookup({ lookup: 90, promised: [85, 95] }), 90)
+assert.equal(backedLookup({ lookup: 2, promised: [1, 1] }), 2) // E1: counted 2 duplicate charges, promised to remove 1
+assert.equal(backedLookup({ lookup: 3, promised: [2, 2] }), 3) // E5: counted 3 accounts, promised to merge 2
+assert.equal(backedLookup({ lookup: 1, promised: [87, 87] }), null)
+assert.equal(backedLookup({ lookup: null, promised: [87, 87] }), null)
+assert.equal(backedLookup(null), null)
+{
+  const live = { lines: [{ kind: 'row_count', title: 'invoices rows changed', lookup: 1, promised: [87, 87], measured: 87 },
+    { kind: 'row_count', title: 'accounts rows changed', lookup: null, promised: [1, 90], measured: 75 }] }
+  assert.equal(backedLookup(primaryLine(live)), null)
+}
 console.log('run.js checks pass')
